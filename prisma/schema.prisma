@@ -1,0 +1,159 @@
+// Prisma schema — SaaS Marmitarias iFood
+// Convenções:
+// - PK UUID (`@default(uuid())`) gerado em pgcrypto (extension ativada via SQL na migration).
+// - `organization_id` em toda tabela de negócio.
+// - Tabelas multi-tenant habilitam RLS na migration.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// =============================================================================
+// Enums
+// =============================================================================
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  OPERATOR
+  VIEWER
+}
+
+enum IfoodEnvironment {
+  sandbox
+  production
+}
+
+// =============================================================================
+// Organizações
+// =============================================================================
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  document  String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users     OrganizationUser[]
+  merchants Merchant[]
+  creds     IfoodCredential[]
+  audits    AuditLog[]
+
+  @@map("organizations")
+}
+
+// =============================================================================
+// Usuários (espelho server-side de auth.users do Supabase)
+// =============================================================================
+
+model User {
+  id             String   @id // = auth.users.id no Supabase; sem default Prisma
+  email          String   @unique
+  fullName       String?  @map("full_name")
+  isSuperAdmin   Boolean  @default(false) @map("is_super_admin")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  memberships    OrganizationUser[]
+  audits         AuditLog[]
+
+  @@map("users")
+}
+
+// =============================================================================
+// Associação User ↔ Organization com RBAC
+// =============================================================================
+
+model OrganizationUser {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  userId         String   @map("user_id")
+  role           UserRole
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("organization_users")
+}
+
+// =============================================================================
+// Merchants (lojas do iFood)
+// =============================================================================
+
+model Merchant {
+  id              String    @id @default(uuid())
+  organizationId  String    @map("organization_id")
+  ifoodMerchantId String    @map("ifood_merchant_id")
+  name            String?
+  corporateName   String?   @map("corporate_name")
+  status          String?   // OK | WARNING | CLOSED | ERROR | null (ainda não sincronizado)
+  lastSyncedAt    DateTime? @map("last_synced_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, ifoodMerchantId])
+  @@index([organizationId])
+  @@map("merchants")
+}
+
+// =============================================================================
+// Credenciais iFood — uma coleção por Organization por ambiente
+// =============================================================================
+
+model IfoodCredential {
+  id                          String           @id @default(uuid())
+  organizationId              String           @map("organization_id")
+  environment                 IfoodEnvironment
+
+  clientId                    String           @map("client_id")
+  clientSecretCipher          String           @map("client_secret_cipher")
+  clientSecretKeyVersion      Int              @default(1) @map("client_secret_key_version")
+
+  accessTokenCipher           String?          @map("access_token_cipher")
+  accessTokenExpiresAt        DateTime?        @map("access_token_expires_at")
+  accessTokenKeyVersion       Int?             @map("access_token_key_version")
+
+  createdAt                   DateTime         @default(now()) @map("created_at")
+  updatedAt                   DateTime         @updatedAt @map("updated_at")
+
+  organization                Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, environment])
+  @@index([organizationId])
+  @@map("ifood_credentials")
+}
+
+// =============================================================================
+// Auditoria
+// =============================================================================
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  organizationId String?  @map("organization_id")
+  userId         String?  @map("user_id")
+  action         String   // ex.: organization.create
+  entity         String?  // ex.: Merchant
+  entityId       String?  @map("entity_id")
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([userId, createdAt])
+  @@map("audit_logs")
+}
