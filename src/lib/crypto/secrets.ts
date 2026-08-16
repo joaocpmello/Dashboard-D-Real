@@ -8,6 +8,12 @@ import {
 
 // Cifra AES-256-GCM. Formato de saída:
 //   base64( iv(12 bytes) || authTag(16 bytes) || ciphertext )
+//
+// Validação:
+//   - Esta camada valida APENAS a sua própria chave (CREDENTIAL_ENCRYPTION_KEY),
+//     para ser usável em testes unitários sem montar o ambiente inteiro.
+//   - A validação central do ambiente (Supabase/DB) é feita em `lib/env.ts`
+//     quando um cliente Supabase é instanciado.
 
 const ALGO: CipherGCMTypes = 'aes-256-gcm';
 const IV_LEN = 12;

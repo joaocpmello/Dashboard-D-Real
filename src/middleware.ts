@@ -7,10 +7,18 @@ const PUBLIC_ROUTES = new Set(['/login', '/auth/callback', '/auth/confirm']);
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request: { headers: request.headers } });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  // O middleware roda no Edge Runtime — não importa lib/env (server-only Node).
+  // Validamos de forma defensiva e seguimos sem refresh de sessão se faltar env
+  // (a página de login ainda renderiza; requireSession falhará depois).
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) {
+    // Sem env, deixa passar — a página alvo ainda vai chamar getSessionUser
+    // que também validará, retornando erro útil.
+    return response;
+  }
+
+  const supabase = createServerClient(url, anon, {
       cookies: {
         get(name: string) {
           return request.cookies.get(name)?.value;

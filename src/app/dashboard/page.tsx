@@ -1,5 +1,8 @@
 import { requireSession } from '@/lib/auth/session';
 
+// Página autenticada — sempre dinâmica (depende da sessão do Supabase).
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
   const session = await requireSession();
   return (

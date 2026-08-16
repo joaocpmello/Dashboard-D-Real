@@ -1,15 +1,17 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { getServerEnv } from '@/lib/env';
 
 // Cliente Supabase para uso em Server Components, Route Handlers e Server Actions.
 // NUNCA importar isto em código client-side.
 
 export function createSupabaseServerClient() {
+  const env = getServerEnv();
   const cookieStore = cookies();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         get(name: string) {
