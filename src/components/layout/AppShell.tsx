@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { UserMenu } from './UserMenu';
+import { MobileShellController } from './MobileShellController';
 import type { Role } from '@/lib/data/types';
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -45,16 +46,38 @@ export function AppShell({
       ? ROLE_LABEL[user.role]
       : 'Sem papel';
 
+  const navProps = {
+    pathname,
+    role: user.role,
+    isSuperAdmin: user.isSuperAdmin,
+  };
+
   return (
     <div className="flex min-h-screen bg-ink-50">
-      <Sidebar pathname={pathname} role={user.role} isSuperAdmin={user.isSuperAdmin} />
+      {/* Sidebar desktop (≥md) */}
+      <div className="hidden md:block">
+        <Sidebar {...navProps} />
+      </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <Header
           title={title}
           subtitle={subtitle}
           orgName={orgName}
           isDemo={isDemo}
-          actions={<UserMenu email={user.email} fullName={user.fullName} roleLabel={roleLabel} />}
+          actions={
+            <div className="flex items-center gap-3">
+              <div className="md:hidden">
+                <MobileShellController {...navProps} />
+              </div>
+              {actions ?? (
+                <UserMenu
+                  email={user.email}
+                  fullName={user.fullName}
+                  roleLabel={roleLabel}
+                />
+              )}
+            </div>
+          }
         />
         <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
           <div className="mx-auto w-full max-w-7xl">{children}</div>

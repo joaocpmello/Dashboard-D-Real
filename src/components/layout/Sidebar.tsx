@@ -11,13 +11,19 @@ type NavItem = {
   requires?: Role;
 };
 
-const home = (path: string) =>
+const home = () =>
   'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors';
 
-const active = (path: string, href: string) =>
-  path === href
-    ? 'bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-500/20'
-    : 'text-ink-600 hover:bg-ink-100 hover:text-ink-800';
+const isActive = (path: string, href: string): boolean => {
+  if (href === '/dashboard') return path === '/' || path === '/dashboard';
+  if (href === '/lojas') {
+    return path === '/lojas' || path.startsWith('/lojas/');
+  }
+  return path === href || path.startsWith(`${href}/`);
+};
+
+const activeClass = 'bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-500/20';
+const idleClass = 'text-ink-600 hover:bg-ink-100 hover:text-ink-800';
 
 function Icon({ children }: { children: ReactNode }) {
   return (
@@ -34,10 +40,12 @@ export function Sidebar({
   pathname,
   role,
   isSuperAdmin,
+  onNavigate,
 }: {
   pathname: string;
   role: Role | null;
   isSuperAdmin: boolean;
+  onNavigate?: () => void;
 }) {
   const canSeeUsers = isSuperAdmin || role === 'ADMIN' || role === 'MANAGER';
 
@@ -169,7 +177,7 @@ export function Sidebar({
   ];
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-ink-200 bg-white md:flex md:flex-col">
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-ink-200 bg-white">
       <div className="flex h-16 items-center gap-2 border-b border-ink-200 px-5">
         <div className="grid h-8 w-8 place-items-center rounded-lg bg-brand-500 text-sm font-bold text-white">
           M
@@ -180,7 +188,7 @@ export function Sidebar({
         </div>
       </div>
 
-      <nav className="flex-1 space-y-6 px-3 py-4">
+      <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
         <div>
           <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-400">
             Operação
@@ -188,9 +196,15 @@ export function Sidebar({
           <ul className="space-y-1">
             {primary.map((item) => {
               if (item.requires && !canSeeUsers && item.href === '/usuarios') return null;
+              const isItemActive = isActive(pathname, item.href);
               return (
                 <li key={item.label}>
-                  <Link href={item.href} className={`${home(item.href)} ${active(pathname, item.href)}`}>
+                  <Link
+                    href={item.href}
+                    onClick={onNavigate}
+                    className={`${home()} ${isItemActive ? activeClass : idleClass}`}
+                    aria-current={isItemActive ? 'page' : undefined}
+                  >
                     {item.icon}
                     {item.label}
                   </Link>
@@ -208,7 +222,7 @@ export function Sidebar({
             {upcoming.map((item) => (
               <li key={item.label}>
                 <span
-                  className={`${home('#')} text-ink-400 hover:bg-ink-50 cursor-not-allowed`}
+                  className={`${home()} text-ink-400 hover:bg-ink-50 cursor-not-allowed`}
                   title="Em breve"
                 >
                   {item.icon}

@@ -196,3 +196,71 @@ npm run build       → ✓ Compiled successfully (9/9 static pages, 3 rotas /ap
 - O `crypto-secrets.ts` foi ajustado nesta fase para que `loadKey()` valide apenas `CREDENTIAL_ENCRYPTION_KEY`, desacoplando a camada de crypto da validação completa de env (necessário para os testes unitários de criptografia). Essa decisão está consolidada e não deve ser revertida sem motivo.
 
 **Próximos passos:** FASE 3 — Frontend (login, layout autenticado, sidebar, dashboard, lojas, usuários, configurações). Não começar pedidos ainda.
+
+---
+
+## FASE 3 — Frontend / MVP Visual Demonstrável
+
+**Status:** ✅ Concluída (visual). Backend real ainda depende de Supabase provisionado.
+
+**Telas entregues (rotas autenticadas):**
+
+- `/login` — split-screen SaaS: branding à esquerda (checkpoints de venda), formulário à direita com "Entrar com credenciais de demo", tratamento de erros traduzidos do Supabase.
+- `/dashboard` — hero de boas-vindas, 4 StatCards (lojas / abertas / pedidos hoje / faturamento hoje), tabela de lojas resumida, card de Integração iFood, card "Em breve" para performance operacional.
+- `/lojas` — 4 StatCards (total / abertas / pausadas / com problema), filtros pill por status com contagens + busca textual + tabela completa + EmptyState contextual.
+- `/lojas/[id]` — header da loja com status badge, resumo operacional, integração iFood lateral, e seções "Pedidos" / "Cardápio" marcadas como "Em breve".
+- `/usuarios` — 4 StatCards (total / ativos / admins / gerentes), tabela com avatar/iniciais, RoleBadge, status ativo/inativo, distribuição por papel com barras de progresso, painel descritivo de permissões por papel.
+- `/configuracoes` — dados da organização (read-only), credenciais iFood separadas por ambiente (sandbox/produção), preferências (em breve), Integração iFood, sessão atual, lista de princípios de segurança ativos.
+
+**Layout & shell:**
+
+- `AppShell` — sidebar desktop (≥md) + drawer mobile (<md) controlado por `MobileShellController` (client component).
+- `Sidebar` — `isActive()` considera subrotas (`/lojas/[id]` ativa "Lojas"). Itens "Em breve" ficam desabilitados com dot warning.
+- `Header` — sticky, com org name, badge de modo demo, slot para ações da página.
+- `UserMenu` — avatar com iniciais, papel traduzido, link para Configurações, Sair.
+
+**Sistema visual:**
+
+- Cores: `brand` (laranja MarmitaOS), `ink` (slate), `success`, `warn`, `danger`, `info`.
+- Componentes: `Card`, `Badge` (+ `Dot`), `Button` (primary/secondary/ghost/danger × sm/md/lg), `Input`, `Select`, `Label`, `Table` (`Table`, `THead`, `TBody`, `TR`, `TH`, `TD`, `TableEmpty`).
+- Estados: `LoadingState`, `EmptyState`, `ErrorState` em `src/components/ui/States.tsx`.
+- `MerchantStatus` — normaliza status iFood (OPEN/CLOSED/PAUSED/INTEGRATION_PROBLEM/UNKNOWN) com tom visual.
+- `RoleBadge` — mapa de papéis ADMIN/MANAGER/OPERATOR/VIEWER → badge.
+
+**Mocks isolados:**
+
+- `src/mocks/demo-data.ts` — `DEMO_ORG`, `DEMO_MERCHANTS` (6 lojas com status variado), `DEMO_USERS` (5 usuários cobrindo todos os papéis, um inativo).
+- `src/lib/data/index.ts` — `dataMode.isDemo()` decide mocks vs. Prisma. Cai em demo se faltar env do Supabase ou se `NEXT_PUBLIC_DEMO_MODE=true`.
+- `getPageContext()` — combina sessão Supabase com fallback de demo (usuário Carla Mendes, ADMIN) para a apresentação.
+
+**Responsividade:**
+
+- Sidebar desktop oculta em <md; drawer mobile com backdrop, lock de scroll, fecha ao navegar.
+- Hamburger no Header em <md.
+- Tabelas com `overflow-x-auto`.
+- Grid de StatCards colapsa de 4 → 2 colunas em telas pequenas.
+
+**Validações executadas (verdes):**
+```
+npm test            → 33/33 testes (8 arquivos)
+npm run typecheck   → 0 erros
+npm run lint        → 0 erros, 0 warnings
+npm run build       → ✓ Compiled successfully (12 rotas)
+```
+
+**Auditoria de segurança (re-sweep FASE 3):**
+
+- ✅ Nenhuma rota nova chama `merchant-api.ifood.com.br` — tudo passa pelo servidor.
+- ✅ Nenhum `NEXT_PUBLIC_*` novo carrega secret.
+- ✅ `/lojas/[id]` valida `notFound()` se o merchant não pertence à org do usuário (via `getMerchant` no `lib/data`).
+- ✅ `Sidebar` filtra "Usuários" para quem não tem MANAGER+; `/usuarios` checa `canManage` para exibir CTA de convite.
+- ✅ `/configuracoes` marca "Atualizar credenciais" como desabilitado sem permissão ADMIN+.
+
+**Pendências declaradas (não bloqueiam a apresentação):**
+
+- Forms em `/configuracoes` estão read-only — edição real fica para depois que Supabase estiver provisionado e a API de org/credentials estiver completa.
+- `Sincronizar agora` em `/lojas` é botão desabilitado (UI pronta; sync real já existe via `POST /api/merchants/sync`).
+- `Convidar usuário` é botão desabilitado (a API já existe: `PUT /api/organizations`).
+- Módulo de pedidos, cardápio, avaliações, promoções, relatórios e billing continuam como "Em breve" — não implementados nesta fase.
+
+**Próxima fase:** FASE 4 — Segurança (CSP, rate limiting, auditoria contínua). Antes disso, priorizar provisionamento do Supabase real para validar E2E.

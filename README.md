@@ -148,7 +148,7 @@ Cobertura:
 - [x] FASE 0 — Análise & Arquitetura
 - [x] FASE 1 — Fundação (Database + Auth/RBAC)
 - [x] FASE 2 — Integração iFood + APIs internas + Testes
-- [ ] FASE 3 — Frontend (login, layout, sidebar, dashboard, lojas, usuários)
+- [x] FASE 3 — Frontend (login, layout, sidebar, dashboard, lojas, usuários, configurações)
 - [ ] FASE 4 — Segurança (auditoria contínua, CSP, rate limiting)
 - [ ] FASE 5 — QA
 - [ ] FASE 6 — Documentação
