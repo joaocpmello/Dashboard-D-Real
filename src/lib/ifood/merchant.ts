@@ -11,8 +11,8 @@ import type {
   IfoodMerchantDetails,
   IfoodMerchantStatusResponse,
   IfoodMerchantSummary,
-  IfoodToken,
 } from '@/lib/ifood/types/merchant';
+import type { IfoodToken } from '@/lib/ifood/types/token';
 
 // Resolve o ambiente: se não informado, usa o configurado em IFOOD_ENVIRONMENT.
 export function resolveEnvironment(override?: IfoodEnvironment): IfoodEnvironment {
@@ -91,7 +91,12 @@ export class IfoodMerchantService {
       bearerToken: token,
     });
 
-    const persisted: IfoodMerchantSummary[] = [];
+    const persisted: {
+      id: string;
+      ifoodMerchantId: string;
+      name: string | null;
+      status: string | null;
+    }[] = [];
     for (const m of remote) {
       const status = await this.fetchStatusSafe(input.organizationId, env, m.id, token);
       const row = await merchantRepo.upsertFromIfood({

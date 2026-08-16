@@ -27,13 +27,14 @@ export class RBACService {
 
   // Exige um dos papéis listados (sem hierarquia).
   static requireOneOf(roles: Role[]): Promise<SessionUser> {
+    const min: Role = roles[0] ?? 'VIEWER';
     return this.enforce(async (s) => {
       if (s.isSuperAdmin) return;
       if (s.organizationId === null) throw new ForbiddenError('Sem organização ativa');
       if (!s.role || !roles.includes(s.role)) {
         throw new ForbiddenError('Papel não autorizado');
       }
-    }, roles[0]);
+    }, min);
   }
 
   // Apenas SUPER_ADMIN da plataforma.
@@ -45,7 +46,6 @@ export class RBACService {
 
   private static async enforce(
     check: (s: SessionUser) => Promise<void>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _min: Role | string,
   ): Promise<SessionUser> {
     const session = await getSessionUser();

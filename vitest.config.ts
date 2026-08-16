@@ -10,6 +10,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // Módulo virtual do Next.js — stub em ambiente de teste.
+      'server-only': path.resolve(__dirname, './tests/shims/server-only.ts'),
     },
   },
 });

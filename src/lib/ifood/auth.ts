@@ -64,4 +64,10 @@ export class IfoodAuthService {
   invalidate(organizationId: string, env: IfoodEnvironment): void {
     cache.delete(keyOf(organizationId, env));
   }
+
+  // Limpa todo o cache em memória. Usado em testes; nunca chamar em produção
+  // sem motivo — cada entrada é por (org, env) e tem TTL.
+  static clearAllCacheForTests(): void {
+    cache.clear();
+  }
 }

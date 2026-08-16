@@ -1,5 +1,6 @@
 import 'server-only';
 import { prisma } from '@/lib/db/prisma';
+import { Prisma } from '@prisma/client';
 
 export const auditRepo = {
   log(input: {
@@ -20,7 +21,9 @@ export const auditRepo = {
         action: input.action,
         entity: input.entity,
         entityId: input.entityId,
-        metadata: input.metadata ?? undefined,
+        metadata: input.metadata
+          ? (input.metadata as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
       },
     });
   },
