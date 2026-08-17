@@ -264,3 +264,136 @@ npm run build       → ✓ Compiled successfully (12 rotas)
 - Módulo de pedidos, cardápio, avaliações, promoções, relatórios e billing continuam como "Em breve" — não implementados nesta fase.
 
 **Próxima fase:** FASE 4 — Segurança (CSP, rate limiting, auditoria contínua). Antes disso, priorizar provisionamento do Supabase real para validar E2E.
+
+---
+
+## DEPLOY / PRODUÇÃO
+
+**Status:** 🟡 Configurado para deploy na Vercel. Aguardando provisionamento manual do Supabase e configuração de credenciais de produção.
+
+### Plataforma
+
+| Item | Valor |
+|---|---|
+| Plataforma | **Vercel** (Hobby ou Pro) |
+| Framework | **Next.js 14.2** (App Router) |
+| Runtime Node | 20.x |
+| Banco | **Supabase PostgreSQL** (RLS ativo) |
+| ORM | Prisma 5.22 (`DATABASE_URL` pooled + `DIRECT_URL` direct) |
+| Auth | Supabase Auth (cookies HTTP-only via `@supabase/ssr`) |
+| Região | Definida na Vercel (recomendado: mesma do Supabase) |
+
+### Compatibilidade Vercel (validação estática)
+
+- ✅ **Route Handlers** (`/api/merchants`, `/api/merchants/sync`, `/api/organizations`) — Serverless Functions, Edge-compatíveis.
+- ✅ **Middleware** (`src/middleware.ts`) — Edge Runtime (usa `NEXT_PUBLIC_*` apenas; defensivo se env faltar).
+- ✅ **Server-only** (`import 'server-only'`) — quebra o build se algum import vazar para o client.
+- ✅ **Prisma** — singleton em `src/lib/db/prisma.ts`; `prisma generate` executado em `postinstall`.
+- ✅ **Supabase** — segregado em 3 clientes (`browser` anon, `server` anon, `admin` service_role). Nenhum secret no client.
+- ✅ **Auth** — sessão via cookies gerenciados por `@supabase/ssr`.
+- ✅ **Headers de segurança** — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Strict-Transport-Security` configurados em `next.config.mjs`.
+
+### Variáveis de ambiente (Vercel → Project Settings → Environment Variables)
+
+**Públicas (NEXT_PUBLIC_*) — embutidas no bundle do cliente, seguras por design:**
+
+| Variável | Exemplo | Ambiente |
+|---|---|---|
+| `NEXT_PUBLIC_APP_URL` | `https://marmitarias-ifood.vercel.app` | Production, Preview, Development |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://xxxxx.supabase.co` | Production, Preview, Development |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJ...` (anon public key) | Production, Preview, Development |
+| `NEXT_PUBLIC_DEMO_MODE` | `false` | Production (não usar `true` em prod) |
+
+**Server-only — NUNCA `NEXT_PUBLIC_*`:**
+
+| Variável | Origem | Ambiente |
+|---|---|---|
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API | Production, Preview, Development |
+| `DATABASE_URL` | Supabase → Settings → Database (porta 6543, pooled) | Production, Preview, Development |
+| `DIRECT_URL` | Supabase → Settings → Database (porta 5432, direct) | Production, Preview, Development |
+| `CREDENTIAL_ENCRYPTION_KEY` | `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` | Production (e Preview se quiser testar) |
+| `INITIAL_SUPER_ADMIN_EMAIL` | Email do seu super-admin | Production, Preview, Development |
+| `IFOOD_ENVIRONMENT` | `sandbox` ou `production` | Production, Preview, Development |
+| `IFOOD_SANDBOX_CLIENT_ID` | iFood developer portal | Development, Preview |
+| `IFOOD_SANDBOX_CLIENT_SECRET` | iFood developer portal | Development, Preview |
+| `IFOOD_PRODUCTION_CLIENT_ID` | iFood developer portal | Production (quando promovido) |
+| `IFOOD_PRODUCTION_CLIENT_SECRET` | iFood developer portal | Production (quando promovido) |
+
+⚠️ **ATENÇÃO:**
+- A `SUPABASE_SERVICE_ROLE_KEY` tem poder de admin total. Vazou = banco comprometido.
+- A `CREDENTIAL_ENCRYPTION_KEY` é usada para criptografar segredos do iFood em repouso. Se você trocá-la em produção, os dados existentes no banco ficarão ilegíveis. Mantenha a mesma do `.env` original.
+- Se você ainda não tem credenciais do iFood, deixe as variáveis vazias. A aplicação não quebra — o `/configuracoes` e a sync de merchants só funcionam quando há credenciais válidas.
+
+### Configuração do Supabase Auth (após primeiro deploy)
+
+No painel do Supabase, em **Authentication → URL Configuration**:
+
+- **Site URL:** `https://SEU-PROJETO.vercel.app` (ou domínio custom)
+- **Redirect URLs:** adicione:
+  - `https://SEU-PROJETO.vercel.app/auth/callback`
+  - `https://SEU-PROJETO.vercel.app/login`
+  - `https://meudominio.com/auth/callback` (quando configurar domínio)
+
+### Migrations Prisma
+
+A Vercel **não executa migrations automaticamente** durante o build. Aplicar manualmente antes do primeiro deploy real:
+
+```bash
+# Em ambiente local com DATABASE_URL/DIRECT_URL apontando para o Supabase de produção:
+npx prisma migrate deploy
+```
+
+Ou via Vercel CLI:
+```bash
+vercel env pull .env.production
+npx prisma migrate deploy
+```
+
+Nenhuma migration destrutiva deve ser executada automaticamente. A migration `20260815000000_init_with_rls` é a única existente e é **non-destructive** (cria tabelas + RLS).
+
+### Domínio customizado
+
+1. Vercel → Project → Settings → Domains → Add
+2. Inserir `meudominio.com` (ou subdomínio `app.meudominio.com`)
+3. Vercel mostra os registros DNS a configurar no provedor do domínio
+4. Após propagação, atualizar `NEXT_PUBLIC_APP_URL` para `https://meudominio.com`
+5. Atualizar **Site URL** e **Redirect URLs** no Supabase
+
+### Processo de deploy (passo a passo)
+
+**Opção 1 — Via Vercel Dashboard (recomendado para primeira vez):**
+1. Acesse https://vercel.com e faça login
+2. **Add New → Project** → Importar o repositório Git (`marmitarias-ifood-saas` ou nome do seu repo)
+3. **Framework Preset:** Next.js (detectado automaticamente)
+4. **Build Command:** `npm run build` (padrão Vercel)
+5. **Install Command:** `npm install` (padrão Vercel) — o `postinstall: prisma generate` roda automaticamente
+6. **Output Directory:** deixe em branco (Next.js padrão)
+7. **Environment Variables:** adicionar todas as da tabela acima
+8. Clicar em **Deploy**
+9. Aguardar build (~2-4 min)
+10. Abrir `https://SEU-PROJETO.vercel.app`
+
+**Opção 2 — Via Vercel CLI:**
+```bash
+cd "C:/Users/joaoc/OneDrive/Desktop/Dashboard delivery"
+vercel login
+vercel link
+vercel env add NEXT_PUBLIC_SUPABASE_URL production
+# ... (repetir para cada variável)
+vercel --prod
+```
+
+### Limitações e bloqueios conhecidos
+
+- **Migrations não rodam no build da Vercel.** A primeira vez em produção, rodar `prisma migrate deploy` manualmente (local ou CI).
+- **Sem Supabase provisionado, o app cai em modo demo.** Isso é intencional (`src/lib/data/index.ts`) — o front exibe dados mock até você conectar um Supabase real.
+- **Cookies Supabase exigem HTTPS.** A Vercel serve HTTPS por padrão em `*.vercel.app` e domínios custom.
+- **Service role key nunca chega ao browser** (verificado por `import 'server-only'` em `src/lib/supabase/admin.ts`).
+
+### Resultado esperado
+
+Ao final do deploy:
+- `https://SEU-PROJETO.vercel.app` → página de login
+- Login com `INITIAL_SUPER_ADMIN_EMAIL` → dashboard
+- Dashboard, lojas, usuários, configurações funcionais (dados reais se Supabase conectado, demo caso contrário)
+
