@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
 // Rotas públicas que não exigem sessão
-const PUBLIC_ROUTES = new Set(['/login', '/auth/callback', '/auth/confirm']);
+const PUBLIC_ROUTES = new Set(['/login', '/cadastro', '/auth/callback', '/auth/confirm']);
 
 export async function middleware(request: NextRequest) {
   // Expõe o pathname para Server Components lerem via headers().
@@ -52,7 +52,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && pathname === '/login') {
+  if (user && (pathname === '/login' || pathname === '/cadastro')) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     url.searchParams.delete('next');

@@ -397,3 +397,90 @@ Ao final do deploy:
 - Login com `INITIAL_SUPER_ADMIN_EMAIL` → dashboard
 - Dashboard, lojas, usuários, configurações funcionais (dados reais se Supabase conectado, demo caso contrário)
 
+---
+
+## CONTINUIDADE DA PRÓXIMA SESSÃO
+
+**Fase atual:** FASE 4 — Validação E2E real com Supabase provisionado + Deploy.
+**Última etapa concluída:** Seed do SUPER_ADMIN executado com sucesso contra o Supabase real.
+**Última ação executada:** Verificação pós-seed (`scripts/verify-seed.js`) confirmando o espelho `auth.users ↔ public.users` e validações finais (test/typecheck/lint/build) todas verdes.
+
+### Resultado do seed (2026-08-18)
+
+- `prisma/seed.ts` rodou sem erro usando `TSX_TSCONFIG_PATH=tsconfig.seed.json` (alias `server-only` → `tests/shims/server-only.ts`).
+- `public.users`: linha de `joao@deliveryreal.com` (id `0ccaed43-5ad1-4662-bcdb-76cfdc3384c1`) com `isSuperAdmin = true`.
+- `auth.users` (Supabase): mesmo UUID, email confirmado — espelhamento OK.
+- `Organization`: 0 (esperado — seed não cria Organization; é criada via UI pelo super-admin após login).
+- `OrganizationUser` para o super-admin: 0 (esperado — ele é global, não precisa de membership).
+- `Merchant`: 0.
+
+### Validações finais (todas verdes)
+
+```
+npm test            → 33/33 testes (8 arquivos)
+npm run typecheck   → 0 erros
+npm run lint        → 0 erros, 0 warnings
+npm run build       → ✓ Compiled successfully (12/12 páginas)
+```
+
+### Arquivos modificados nesta sessão
+
+- `scripts/verify-seed.js` *(novo)* — verificação ad-hoc do espelho Auth ↔ DB via `DIRECT_URL` (pgBouncer pooled não aceita prepared statements para scripts de múltiplas queries).
+- `tsconfig.seed.json` *(já existente, confirmado)* — alias de `server-only` para `tests/shims/server-only.ts`; módulo de produção continua importando `server-only` real.
+- `scripts/run-seed.js` *(já existente, confirmado)* — loader manual de `.env.local` + executor via `tsx`.
+- `docs/progress.md` *(este arquivo)* — seção de continuidade adicionada.
+
+### Próxima ação exata
+
+1. **Validação manual E2E** (depende do usuário, não automatizável nesta sessão):
+   - `pnpm dev` (ou `npm run dev`) e abrir `http://localhost:3000/login`.
+   - Logar com `INITIAL_SUPER_ADMIN_EMAIL` e a senha cadastrada no painel Supabase Auth.
+   - Confirmar redirecionamento para `/dashboard`.
+   - Criar uma Organization via UI (POST `/api/organizations` deve estar exposto apenas para super-admin).
+   - (Opcional) Convidar um membro via PUT `/api/organizations` para validar o fluxo admin.
+2. **Decidir o próximo marco** entre:
+   - **Deploy para Vercel** (variáveis já documentadas na seção "Deploy/Produção" deste arquivo) — seguir o passo a passo `Opção 1` (Dashboard) ou `Opção 2` (CLI).
+   - **FASE 4 — Segurança** (CSP, rate limiting, auditoria contínua) antes do deploy público.
+   - **FASE 5 — Pedidos / Cardápio / Relatórios** (escopo de produto, não-bloqueante para o deploy).
+
+### Comando para continuar
+
+```bash
+# Para subir o app e validar login manualmente:
+cd "C:/Users/joaoc/OneDrive/Desktop/Dashboard delivery"
+npm run dev
+
+# Para re-executar o seed (idempotente):
+TSX_TSCONFIG_PATH=tsconfig.seed.json node scripts/run-seed.js .env.local tsx prisma/seed.ts
+
+# Para re-verificar o estado do DB:
+node scripts/verify-seed.js
+```
+
+### Pendências
+
+- ✅ Seed executado.
+- ✅ Espelho Auth ↔ DB validado.
+- ✅ Testes/typecheck/lint/build verdes.
+- � Validação manual do fluxo de login (depende do usuário no browser).
+- � Criação da primeira Organization (via UI).
+- ⏳ Deploy na Vercel (variáveis documentadas; basta aplicar).
+- ⏳ FASE 4 (segurança adicional) e FASE 5 (escopo de produto) — não bloqueantes.
+
+### Testes executados nesta sessão
+
+- `npm test` — 33/33 verdes (env, crypto-secrets, ifood-auth, ifood-client, ifood-merchant, multi-tenant-isolation, rbac, with-auth).
+- `npm run typecheck` — 0 erros.
+- `npm run lint` — 0 erros, 0 warnings.
+- `npm run build` — 12/12 páginas, todas as rotas (`/`, `/login`, `/dashboard`, `/lojas`, `/lojas/[id]`, `/usuarios`, `/configuracoes`, `/api/merchants`, `/api/merchants/sync`, `/api/organizations`, `/_not-found`, middleware).
+
+### Problemas conhecidos
+
+- **pgBouncer pooler (`DATABASE_URL` porta 6543) não suporta prepared statements em scripts ad-hoc de múltiplas queries** — erro `prepared statement "s0" already exists`. Solução já aplicada: scripts de verificação (`verify-seed.js`) usam `DIRECT_URL` (porta 5432, conexão direta). O app em runtime usa `DATABASE_URL` (pooler) normalmente porque o `withTenantContext` faz `SET LOCAL` por transação, evitando esse padrão.
+- **OneDrive + Windows + `next build`** pode falhar intermitentemente com erro de `readlink` / `font-manifest.json` (problema de sincronização de filesystem, não do projeto). Resolução: `rm -rf .next && npm run build`. Não foi necessário nesta sessão.
+
+### Notas de segurança (não colocar no versionamento)
+
+- `SUPABASE_SERVICE_ROLE_KEY`, `CREDENTIAL_ENCRYPTION_KEY`, `IFOOD_*_CLIENT_SECRET` continuam apenas server-side e fora de `NEXT_PUBLIC_*`. Já validado no sweep anterior.
+- Nenhum secret é exposto por este documento ou pelos logs desta sessão.
+

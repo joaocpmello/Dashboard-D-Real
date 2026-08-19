@@ -188,6 +188,16 @@ export default function LoginPage() {
               </button>
             </form>
 
+            <p className="mt-6 text-center text-sm text-ink-600">
+              Ainda não tem conta?{' '}
+              <a
+                href="/cadastro"
+                className="font-medium text-brand-600 hover:text-brand-700"
+              >
+                Cadastre-se
+              </a>
+            </p>
+
             <p className="mt-6 text-center text-xs text-ink-500">
               Acesso protegido · Sessões criptografadas · Conformidade LGPD
             </p>
