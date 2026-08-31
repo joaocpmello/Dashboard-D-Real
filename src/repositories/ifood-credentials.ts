@@ -4,10 +4,16 @@ import { withTenantContext } from '@/lib/db/tenant';
 import { decryptSecret, encryptSecret } from '@/lib/crypto/secrets';
 import type { IfoodEnvironment } from '@/lib/ifood/types/merchant';
 
+const isUuid = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+
 export const ifoodCredentialRepo = {
   // Lê credenciais descriptografadas dentro do contexto de tenant.
   // Chamado pelo IfoodAuthService — NUNCA expor isso via API HTTP.
   async loadDecrypted(organizationId: string, env: IfoodEnvironment) {
+    if (!isUuid(organizationId)) {
+      throw new Error('Invalid organizationId format');
+    }
+
     return withTenantContext(organizationId, async (tx) => {
       const row = await tx.ifoodCredential.findUnique({
         where: { organizationId_environment: { organizationId, environment: env } },
@@ -32,6 +38,10 @@ export const ifoodCredentialRepo = {
     token: string,
     expiresAt: Date,
   ): Promise<void> {
+    if (!isUuid(organizationId)) {
+      throw new Error('Invalid organizationId format');
+    }
+
     const enc = encryptSecret(token);
     await withTenantContext(organizationId, async (tx) => {
       await tx.ifoodCredential.update({
@@ -52,6 +62,10 @@ export const ifoodCredentialRepo = {
     clientId: string;
     clientSecret: string;
   }) {
+    if (!isUuid(input.organizationId)) {
+      throw new Error('Invalid organizationId format');
+    }
+
     const enc = encryptSecret(input.clientSecret);
     return withTenantContext(input.organizationId, (tx) =>
       tx.ifoodCredential.upsert({
@@ -82,6 +96,8 @@ export const ifoodCredentialRepo = {
 
   // Resposta ao cliente: SEMPRE sem o client_secret / tokens.
   async publicView(organizationId: string, env: IfoodEnvironment) {
+    if (!isUuid(organizationId)) return null;
+
     return withTenantContext(organizationId, async (tx) => {
       const row = await tx.ifoodCredential.findUnique({
         where: { organizationId_environment: { organizationId, environment: env } },

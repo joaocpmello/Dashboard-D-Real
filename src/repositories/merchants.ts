@@ -1,8 +1,12 @@
 import 'server-only';
 import { withTenantContext } from '@/lib/db/tenant';
 
+const isUuid = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+
 export const merchantRepo = {
-  list(organizationId: string) {
+  async list(organizationId: string) {
+    if (!isUuid(organizationId)) return [];
+
     return withTenantContext(organizationId, (tx) =>
       tx.merchant.findMany({
         where: { organizationId },
@@ -11,7 +15,9 @@ export const merchantRepo = {
     );
   },
 
-  count(organizationId: string) {
+  async count(organizationId: string) {
+    if (!isUuid(organizationId)) return 0;
+
     return withTenantContext(organizationId, (tx) =>
       tx.merchant.count({ where: { organizationId } }),
     );
@@ -24,6 +30,10 @@ export const merchantRepo = {
     corporateName: string | null;
     status: string | null;
   }) {
+    if (!isUuid(input.organizationId)) {
+      throw new Error('Invalid organizationId format');
+    }
+
     return withTenantContext(input.organizationId, (tx) =>
       tx.merchant.upsert({
         where: {

@@ -2,6 +2,8 @@ import 'server-only';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 
+const isUuid = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+
 // Executa uma função dentro de uma transação Prisma que ativa o tenant atual
 // via SET LOCAL. RLS passa a filtrar pelas políticas definidas na migration.
 //
@@ -12,6 +14,10 @@ export async function withTenantContext<T>(
   organizationId: string,
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
 ): Promise<T> {
+  if (!isUuid(organizationId)) {
+    throw new Error(`Invalid organizationId format: ${organizationId}. Expected UUID.`);
+  }
+
   return prisma.$transaction(async (tx) => {
     // uuid em string — SET LOCAL aceita string, depois cast no policy.
     await tx.$executeRawUnsafe(

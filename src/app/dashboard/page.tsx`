@@ -1,0 +1,213 @@
+import Link from 'next/link';
+import { AppShell } from '@/components/layout/AppShell';
+import { StatCard } from '@/components/dashboard/StatCard';
+import { IntegrationStatus } from '@/components/dashboard/IntegrationStatus';
+import { MerchantTable } from '@/components/merchants/MerchantTable';
+import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { getPageContext } from '@/lib/auth/page-context';
+import { listMerchants, listOrders } from '@/lib/data';
+import { requireSession } from '@/lib/auth/session';
+import { RevenueChart } from '@/components/dashboard/RevenueChart';
+import { TopProductsChart } from '@/components/dashboard/TopProductsChart';
+import { OrderStatusChart } from '@/components/dashboard/OrderStatusChart';
+
+export const dynamic = 'force-dynamic';
+
+export default async function DashboardPage() {
+  const ctx = await getPageContext();
+
+  if (!ctx.isDemo) await requireSession();
+
+  const merchants = await listMerchants(ctx.user.organizationId);
+  const orders = await listOrders(ctx.user.organizationId);
+
+  const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
+  const ordersToday = orders.length;
+
+  const activeMerchants = merchants.filter((m) => (m.status ?? '').toUpperCase() === 'OPEN').length;
+  const total = merchants.length;
+
+  const firstName = (ctx.user.fullName ?? ctx.user.email).split(/\s|@/)[0] ?? 'usuário';
+
+  // Mock data for charts
+  const revenueData = [
+    { date: '2026-08-25', value: 1200 },
+    { date: '2026-08-26', value: 1500 },
+    { date: '2026-08-27', value: 1100 },
+    { date: '2026-08-28', value: 1800 },
+    { date: '2026-08-29', value: 2100 },
+    { date: '2026-08-30', value: 1700 },
+    { date: '2026-08-31', value: 1900 },
+  ];
+
+  const topProductsData = [
+    { name: 'Marmita Fit Frango', value: 145 },
+    { name: 'Carne de Panela', value: 112 },
+    { name: 'Frango Grelhado', value: 98 },
+    { name: 'Peixe ao Forno', value: 76 },
+    { name: 'Suco de Laranja', value: 65 },
+  ];
+
+  const statusCounts = orders.reduce((acc, o) => {
+    acc[o.status] = (acc[o.status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const statusData = Object.entries(statusCounts).map(([name, value]) => ({
+    name,
+    value,
+  }));
+
+  return (
+    <AppShell
+      title="Dashboard"
+      subtitle="Visão geral da sua operação"
+      orgName={ctx.org?.name}
+      isDemo={ctx.isDemo}
+      user={{
+        email: ctx.user.email,
+        fullName: ctx.user.fullName,
+        role: ctx.user.role,
+        isSuperAdmin: ctx.user.isSuperAdmin,
+      }}
+    >
+      <section className="mb-6 rounded-2xl border border-ink-200 bg-gradient-to-br from-white via-white to-brand-50/40 p-6 shadow-card">
+        <p className="text-sm text-ink-500">Olá, {firstName}</p>
+        <h2 className="mt-1 text-2xl font-semibold text-ink-900">
+          Acompanhe suas marmitarias em tempo real
+        </h2>
+        <p className="mt-1 text-sm text-ink-600">
+          Integração iFood ativa, credenciais protegidas e gestão multi-tenant pronta.
+        </p>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Lojas"
+          value={String(total)}
+          hint="Vinculadas à organização"
+          tone="brand"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+              <path d="M3 9 5 4h14l2 5" />
+              <path d="M5 9v11h14V9" />
+              <path d="M9 20v-6h6v6" />
+            </svg>
+          }
+        />
+        <StatCard
+          label="Lojas ativas"
+          value={String(activeMerchants)}
+          hint="Abertas no iFood"
+          tone="success"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+              <path d="M5 12 10 17 20 7" />
+            </svg>
+          }
+        />
+        <StatCard
+          label="Pedidos hoje"
+          value={String(ordersToday)}
+          hint="Sincronizados do iFood"
+          tone="info"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+              <path d="M4 4h2l2 12h11l2-8H7" />
+              <circle cx="9" cy="20" r="1.5" />
+              <circle cx="18" cy="20" r="1.5" />
+            </svg>
+          }
+        />
+        <StatCard
+          label="Faturamento hoje"
+          value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRevenue)}
+          hint="Volume bruto de vendas"
+          tone="warning"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+              <path d="M12 3v18" />
+              <path d="M16 7H10a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6H8" />
+            </svg>
+          }
+        />
+      </section>
+
+      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <div>
+                <CardTitle>Faturamento Semanal</CardTitle>
+                <CardDescription>Evolução do volume de vendas nos últimos 7 dias</CardDescription>
+              </div>
+            </CardHeader>
+            <CardBody>
+              <RevenueChart data={revenueData} title="Vendas Diárias" />
+            </CardBody>
+          </Card>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle>Produtos Mais Vendidos</CardTitle>
+                  <CardDescription>Volume de pedidos por item</CardDescription>
+                </div>
+              </CardHeader>
+              <CardBody>
+                <TopProductsChart data={topProductsData} title="Top 5 Produtos" />
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle>Distribuição de Status</CardTitle>
+                  <CardDescription>Proporção de pedidos entregues, cancelados e pendentes</CardDescription>
+                </div>
+              </CardHeader>
+              <CardBody>
+                <OrderStatusChart data={statusData} title="Status dos Pedidos" />
+              </CardBody>
+            </Card>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <IntegrationStatus
+            connected={ctx.org?.ifoodConnected ?? false}
+            lastSyncAt={ctx.org?.ifoodLastSyncAt ?? null}
+          />
+
+          <Card>
+            <CardHeader>
+              <div>
+                <CardTitle>Lojas da organização</CardTitle>
+                <CardDescription>{total} loja(s) vinculada(s)</CardDescription>
+              </div>
+              <Link
+                href="/lojas"
+                className="text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                Ver todas →
+              </Link>
+            </CardHeader>
+            <CardBody className="p-0">
+              {merchants.length === 0 ? (
+                <div className="px-6 py-10 text-center text-sm text-ink-500">
+                  Nenhuma loja vinculada ainda.
+                </div>
+              ) : (
+                <div className="px-0">
+                  <MerchantTable rows={merchants.slice(0, 5)} />
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        </div>
+      </section>
+    </AppShell>
+  );
+}

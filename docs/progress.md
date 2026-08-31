@@ -202,6 +202,41 @@ npm run build       → ✓ Compiled successfully (9/9 static pages, 3 rotas /ap
 ## FASE 3 — Frontend / MVP Visual Demonstrável
 
 **Status:** ✅ Concluída (visual). Backend real ainda depende de Supabase provisionado.
+...
+(rest of Phase 3 content)
+...
+
+---
+
+## FASE 5 — Módulo de Pedidos e Cardápio (Catálogo)
+
+**Status:** ✅ Concluída
+
+**O que foi feito:**
+- **Modelagem Prisma:** Adicionadas tabelas `Order`, `OrderItem`, `Category`, `Product`, e `ProductPrice` com RLS configurado via `organization_id`.
+- **Integração iFood Orders:**
+  - Implementado `IfoodOrderService` em `src/lib/ifood/order.ts` para listagem e detalhamento de pedidos.
+  - Criado fluxo de sincronização (`syncOrders`) com persistência idempotente via `orderRepo.upsertFromIfood`.
+- **Integração iFood Catalog:**
+  - Implementado `IfoodCatalogService` em `src/lib/ifood/catalog.ts` para consulta de catálogo e atualização de preços/disponibilidade.
+  - Criado fluxo de sincronização de categorias e produtos.
+- **Backend API:**
+  - `/api/orders`: Listagem de pedidos com filtros e paginação.
+  - `/api/orders/sync`: Trigger de sincronização de pedidos (ADMIN+).
+  - `/api/catalog`: Listagem de catálogo.
+  - `/api/catalog/update-price`: Atualização de preço no iFood (ADMIN+).
+  - `/api/catalog/update-availability`: Alteração de disponibilidade no iFood (ADMIN+).
+- **Frontend:**
+  - `/pedidos`: Tela completa com StatCards (Faturamento, Ticket Médio, etc.) e tabela de pedidos com status traduzidos.
+  - `/cardapio`: Interface de gerenciamento de catálogo com visualização de categorias e produtos.
+
+**Validações executadas:**
+- `npm test` → 33/33 testes passando.
+- `npm run typecheck` → 0 erros.
+- `npm run lint` → 0 erros.
+- `npm run build` → ✓ Compiled successfully.
+
+**Próximos passos:** Implementar a lógica de reajuste de preços em lote no frontend e detalhamento de pedidos (modal/drawer).
 
 **Telas entregues (rotas autenticadas):**
 

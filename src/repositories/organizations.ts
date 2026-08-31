@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db/prisma';
 import { withTenantContext } from '@/lib/db/tenant';
 import type { UserRole } from '@prisma/client';
 
+const isUuid = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+
 export const organizationRepo = {
   // Acesso cross-tenant — apenas SUPER_ADMIN chama isto.
   listAll() {
@@ -14,7 +16,9 @@ export const organizationRepo = {
   },
 
   // Lista usuários da Organization ativa, dentro do contexto de tenant.
-  listMembers(organizationId: string) {
+  async listMembers(organizationId: string) {
+    if (!isUuid(organizationId)) return [];
+
     return withTenantContext(organizationId, (tx) =>
       tx.organizationUser.findMany({
         where: { organizationId },
@@ -29,6 +33,10 @@ export const organizationRepo = {
     userId: string;
     role: UserRole;
   }) {
+    if (!isUuid(input.organizationId)) {
+      throw new Error('Invalid organizationId format');
+    }
+
     return withTenantContext(input.organizationId, (tx) =>
       tx.organizationUser.upsert({
         where: {
@@ -48,6 +56,10 @@ export const organizationRepo = {
     userId: string;
     role: UserRole;
   }) {
+    if (!isUuid(input.organizationId)) {
+      throw new Error('Invalid organizationId format');
+    }
+
     return withTenantContext(input.organizationId, (tx) =>
       tx.organizationUser.update({
         where: {

@@ -13,7 +13,7 @@ const RETRY_STATUSES = new Set([429, 500, 502, 503, 504]);
 type FetchLike = typeof fetch;
 
 export type IfoodRequestOptions = {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   path: string;
   query?: Record<string, string | number | undefined>;
   body?: unknown;

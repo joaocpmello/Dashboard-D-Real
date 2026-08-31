@@ -9,6 +9,9 @@ import { EmptyState } from '@/components/ui/States';
 import { getPageContext } from '@/lib/auth/page-context';
 import { getMerchant, listMerchants } from '@/lib/data';
 import { requireSession } from '@/lib/auth/session';
+import { ReviewsSection } from '@/components/reviews/ReviewsSection';
+
+export const dynamic = 'force-dynamic';
 
 export const dynamic = 'force-dynamic';
 
@@ -187,6 +190,8 @@ export default async function MerchantDetailPage({
               />
             </CardBody>
           </Card>
+
+          <ReviewsSection merchantId={merchant.id} />
         </div>
 
         <div className="space-y-4">

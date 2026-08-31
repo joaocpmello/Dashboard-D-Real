@@ -31,6 +31,14 @@ enum IfoodEnvironment {
   production
 }
 
+enum OrderStatus {
+  PLACED
+  CONFIRMED
+  DISPATCHED
+  DELIVERED
+  CANCELLED
+}
+
 // =============================================================================
 // Organizações
 // =============================================================================
@@ -46,6 +54,10 @@ model Organization {
   merchants Merchant[]
   creds     IfoodCredential[]
   audits    AuditLog[]
+  orders    Order[]
+  categories Category[]
+  products  Product[]
+  prices    ProductPrice[]
 
   @@map("organizations")
 }
@@ -103,6 +115,9 @@ model Merchant {
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orders          Order[]
+  categories     Category[]
+  products       Product[]
 
   @@unique([organizationId, ifoodMerchantId])
   @@index([organizationId])
@@ -156,4 +171,107 @@ model AuditLog {
   @@index([organizationId, createdAt])
   @@index([userId, createdAt])
   @@map("audit_logs")
+}
+
+// =============================================================================
+// Pedidos (Orders)
+// =============================================================================
+
+model Order {
+  id              String      @id @default(uuid())
+  organizationId  String      @map("organization_id")
+  merchantId      String      @map("merchant_id")
+  ifoodOrderId    String      @map("ifood_order_id")
+  status          OrderStatus
+  total           Decimal     @db.Decimal(10, 2)
+  customerName    String?     @map("customer_name")
+  customerPhone   String?     @map("customer_phone")
+  customerAddress String?    @map("customer_address")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  items           OrderItem[]
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  merchant        Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, ifoodOrderId])
+  @@index([organizationId])
+  @@index([merchantId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id              String  @id @default(uuid())
+  orderId         String  @map("order_id")
+  ifoodProductId  String  @map("ifood_product_id")
+  productName     String
+  quantity        Int
+  unitPrice       Decimal @db.Decimal(10, 2)
+  totalPrice      Decimal @db.Decimal(10, 2)
+
+  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+// =============================================================================
+// Catálogo (Catalog)
+// =============================================================================
+
+model Category {
+  id              String   @id @default(uuid())
+  organizationId  String   @map("organization_id")
+  merchantId      String   @map("merchant_id")
+  ifoodCategoryId String   @map("ifood_category_id")
+  name            String
+  position        Int?
+  active          Boolean  @default(true)
+
+  products        Product[]
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  merchant        Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, ifoodCategoryId])
+  @@index([organizationId])
+  @@index([merchantId])
+  @@map("categories")
+}
+
+model Product {
+  id              String   @id @default(uuid())
+  organizationId  String   @map("organization_id")
+  merchantId      String   @map("merchant_id")
+  categoryId      String   @map("category_id")
+  ifoodProductId  String   @map("ifood_product_id")
+  name            String
+  description     String?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  category        Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  merchant        Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  prices          ProductPrice[]
+
+  @@unique([organizationId, ifoodProductId])
+  @@index([organizationId])
+  @@index([merchantId])
+  @@map("products")
+}
+
+model ProductPrice {
+  id              String   @id @default(uuid())
+  organizationId  String   @map("organization_id")
+  productId       String   @map("product_id")
+  price           Decimal  @db.Decimal(10, 2)
+  currency        String   @default("BRL")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  product         Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([productId])
+  @@map("product_prices")
 }

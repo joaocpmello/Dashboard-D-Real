@@ -29,7 +29,7 @@ const DEMO_USER: PageUser = {
   fullName: 'Carla Mendes',
   isSuperAdmin: false,
   role: 'ADMIN',
-  organizationId: 'demo-org-0000-0000-0000-000000000000',
+  organizationId: '00000000-0000-0000-0000-000000000000',
 };
 
 export async function getPageContext(): Promise<PageContext> {

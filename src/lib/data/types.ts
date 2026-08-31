@@ -33,6 +33,51 @@ export type UserSummary = {
   lastSignInAt: string | null;
 };
 
+export type CategorySummary = {
+  id: string;
+  name: string;
+  ifoodCategoryId: string;
+  active: boolean;
+};
+
+export type ProductSummary = {
+  id: string;
+  categoryId: string;
+  name: string;
+  description: string | null;
+  price: number;
+  active: boolean;
+};
+
+export type OrderSummary = {
+  id: string;
+  organizationId: string;
+  merchantId: string;
+  ifoodOrderId: string;
+  status: string;
+  total: number;
+  customerName: string | null;
+  customerPhone: string | null;
+  customerAddress: string | null;
+  createdAt: string;
+};
+
+export type OrderItemDetail = {
+  id: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+};
+
+export type OrderDetail = OrderSummary & {
+  items: OrderItemDetail[];
+  statusHistory: {
+    status: string;
+    updatedAt: string;
+  }[];
+};
+
 export type SessionContext = {
   user: {
     id: string;
