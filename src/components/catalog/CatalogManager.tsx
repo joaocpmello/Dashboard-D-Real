@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Table, THead, TBody, TR, TH, TD, TableEmpty } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
@@ -24,18 +24,18 @@ export function CatalogManager({ categories, initialProducts }: Props) {
     if (selectedCatId) {
       fetchProducts();
     }
-  }, [selectedCatId]);
+  }, [selectedCatId, fetchProducts]);
 
-  async function fetchProducts() {
+  const fetchProducts = useCallback(async () => {
     try {
-      const res = await fetch(`/api/catalog?categoryId=${selectedCatId}`);
+      const res = await fetch(\`/api/catalog?categoryId=\${selectedCatId}\`);
       const data = await res.json();
       setProducts(data);
       setSelectedProductIds(new Set());
     } catch (e) {
       console.error('Erro ao carregar produtos', e);
     }
-  }
+  }, [selectedCatId]);
 
   function toggleProduct(id: string) {
     const next = new Set(selectedProductIds);

@@ -92,7 +92,7 @@ export function ReviewsSection({ merchantId }: Props) {
                       {review.rating}★
                     </Badge>
                   </TD>
-                  <TD className="text-sm text-ink-600 italic">"{review.comment ?? 'Sem comentário'}"</TD>
+                  <TD className="text-sm text-ink-600 italic">&quot;{review.comment ?? 'Sem comentário'}&quot;</TD>
                   <TD className="text-right text-xs text-ink-400">
                     {format(new Date(review.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
                   </TD>
