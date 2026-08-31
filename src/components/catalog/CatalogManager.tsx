@@ -28,7 +28,7 @@ export function CatalogManager({ categories, initialProducts }: Props) {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await fetch(\`/api/catalog?categoryId=\${selectedCatId}\`);
+      const res = await fetch(`/api/catalog?categoryId=${selectedCatId}`);
       const data = await res.json();
       setProducts(data);
       setSelectedProductIds(new Set());
