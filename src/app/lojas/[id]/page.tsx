@@ -13,8 +13,6 @@ import { ReviewsSection } from '@/components/reviews/ReviewsSection';
 
 export const dynamic = 'force-dynamic';
 
-export const dynamic = 'force-dynamic';
-
 function formatDateTime(iso: string | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
