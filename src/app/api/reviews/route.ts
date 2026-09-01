@@ -5,6 +5,7 @@ import { IfoodClient } from '@/lib/ifood/client';
 import { IfoodAuthService } from '@/lib/ifood/auth';
 import { IfoodReviewService } from '@/lib/ifood/reviews';
 import { getServerEnv } from '@/lib/env';
+import { ifoodCredentialRepo } from '@/repositories/ifood-credentials';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +18,28 @@ export async function GET(request: NextRequest) {
 
     const env = getServerEnv();
     const client = new IfoodClient();
-    const auth = new IfoodAuthService(client);
+
+    // Fixed IfoodAuthService instantiation with required dependencies
+    const auth = new IfoodAuthService(
+      async (clientId, clientSecret) => {
+        const res = await client.request({
+          method: 'POST',
+          path: '/oauth/token',
+          body: {
+            client_id: clientId,
+            client_secret: clientSecret,
+            grant_type: 'client_credentials'
+          },
+          bearerToken: 'NONE', // OAuth token endpoint doesn't use Bearer
+        });
+        return res;
+      },
+      ifoodCredentialRepo.loadDecrypted,
+      async (orgId, env, token) => {
+        await ifoodCredentialRepo.persistAccessToken(orgId, env, token.token, token.expiresAt);
+      }
+    );
+
     const reviewService = new IfoodReviewService(client, auth);
 
     const iFoodEnv = (process.env.IFOOD_ENVIRONMENT as 'sandbox' | 'production') || 'sandbox';
