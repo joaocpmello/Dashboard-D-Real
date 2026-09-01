@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { RBACService } from '@/lib/auth/rbac';
-import { toErrorResponse } from '@/lib/auth/with-auth';
+import { toErrorResponse } from '@/lib/auth/errors';
 import { IfoodMerchantService } from '@/lib/ifood/merchant';
 
 const bodySchema = z.object({

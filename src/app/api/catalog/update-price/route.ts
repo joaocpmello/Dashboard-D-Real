@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RBACService } from '@/lib/auth/rbac';
-import { toErrorResponse } from '@/lib/auth/with-auth';
+import { toErrorResponse } from '@/lib/auth/errors';
 import { IfoodCatalogService } from '@/lib/ifood/catalog';
 import { z } from 'zod';
 

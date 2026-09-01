@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSession } from '@/lib/auth/session';
-import { toErrorResponse } from '@/lib/auth/with-auth';
+import { toErrorResponse } from '@/lib/auth/errors';
 import { orderRepo } from '@/repositories/orders';
 import { z } from 'zod';
 

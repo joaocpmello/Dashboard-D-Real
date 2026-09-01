@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { RBACService } from '@/lib/auth/rbac';
-import { toErrorResponse } from '@/lib/auth/with-auth';
+import { toErrorResponse } from '@/lib/auth/errors';
 import { merchantRepo } from '@/repositories/merchants';
 
 // Lista merchants da Organization ativa. VIEWER já tem acesso.
