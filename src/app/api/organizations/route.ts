@@ -4,7 +4,7 @@ import { organizationCreateSchema } from '@/schemas';
 import { organizationRepo } from '@/repositories/organizations';
 import { auditRepo } from '@/repositories/audit';
 import { RBACService } from '@/lib/auth/rbac';
-import { toErrorResponse } from '@/lib/auth/with-auth';
+import { toErrorResponse } from '@/lib/auth/errors';
 import { prisma } from '@/lib/db/prisma';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 
