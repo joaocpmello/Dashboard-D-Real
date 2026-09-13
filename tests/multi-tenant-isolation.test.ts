@@ -29,23 +29,27 @@ vi.mock('@/lib/db/prisma', () => ({
 import { withTenantContext } from '@/lib/db/tenant';
 
 describe('withTenantContext', () => {
+  const UUID_1 = '00000000-0000-0000-0000-000000000001';
+  const UUID_2 = '00000000-0000-0000-0000-000000000002';
+  const UUID_3 = '00000000-0000-0000-0000-000000000003';
+
   it('seta app.current_org_id com o organizationId recebido', async () => {
-    await withTenantContext('org-123', async () => {
+    await withTenantContext(UUID_1, async () => {
       // nada
     });
     expect($executeRawUnsafe).toHaveBeenCalledWith(
       'SELECT set_config(\'app.current_org_id\', $1, true)',
-      'org-123',
+      UUID_1,
     );
   });
 
   it('encapsula queries dentro da transação', async () => {
     const tx = { merchant: { findMany, count }, $executeRawUnsafe };
     const seen: unknown[] = [];
-    await withTenantContext('org-456', async (txClient) => {
+    await withTenantContext(UUID_2, async (txClient) => {
       seen.push(txClient);
-      await txClient.merchant.findMany({ where: { organizationId: 'org-456' } });
-      await txClient.merchant.count({ where: { organizationId: 'org-456' } });
+      await txClient.merchant.findMany({ where: { organizationId: UUID_2 } });
+      await txClient.merchant.count({ where: { organizationId: UUID_2 } });
     });
     expect(seen).toHaveLength(1);
     expect(findMany).toHaveBeenCalled();
@@ -56,12 +60,12 @@ describe('withTenantContext', () => {
     // O repositório SEMPRE passa organizationId no WHERE. Aqui verificamos
     // que ele recebe o organizationId certo no construtor e propaga.
     const { merchantRepo } = await import('@/repositories/merchants');
-    await withTenantContext('org-A', async () => {
-      await merchantRepo.list('org-A');
+    await withTenantContext(UUID_3, async () => {
+      await merchantRepo.list(UUID_3);
     });
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { organizationId: 'org-A' },
+        where: { organizationId: UUID_3 },
       }),
     );
   });

@@ -1,29 +1,10 @@
-// Camada de dados para o front (Server Components).
-//
-// Estratégia:
-//   - Tenta usar a API real (Prisma) se o Supabase estiver configurado.
-//   - Caso contrário, cai para mocks realistas em src/mocks/demo-data.ts
-//     sinalizando claramente que está em modo demo.
-//
-// IMPORTANTE:
-//   - O modo demo é apenas para a apresentação enquanto o ambiente Supabase
-//     real não está provisionado. Nunca use em produção: ela aparece como
-//     "demo" no UI e não persiste nada.
-//   - Nenhum segredo é exposto pelos mocks.
-//
-// A detecção de "modo demo" é feita por:
-//   - Ausência de qualquer uma das variáveis de env obrigatórias (Supabase/DB), ou
-//   - Flag explícita NEXT_PUBLIC_DEMO_MODE=true (público, apenas opt-in para
-//     a apresentação — não concede privilégios).
-
 import { DEMO_MERCHANTS, DEMO_ORG, DEMO_USERS, DEMO_ORDERS } from '@/mocks/demo-data';
-import type { MerchantSummary, OrganizationSummary, UserSummary, OrderSummary, CategorySummary, ProductSummary } from './types';
+import type { MerchantSummary, OrganizationSummary, UserSummary, OrderSummary, CategorySummary, ProductSummary, OrderDetail } from './types';
 
 const isUuid = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
 
 function isDemoMode(): boolean {
   if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') return true;
-  // Se não houver env do Supabase, automaticamente cai em demo.
   const hasSupabase =
     !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
     !!process.env.SUPABASE_SERVICE_ROLE_KEY &&
@@ -43,8 +24,6 @@ export async function listMerchants(_organizationId: string | null): Promise<Mer
   if (isDemoMode()) {
     return DEMO_MERCHANTS;
   }
-  // Em produção real, chamaria o repositório com RLS. Mantemos a fronteira
-  // clara para a próxima fase: substituir por merchantRepo.list(organizationId).
   const { merchantRepo } = await import('@/repositories/merchants');
   if (!_organizationId) return [];
   const rows = await merchantRepo.list(_organizationId);
@@ -54,7 +33,7 @@ export async function listMerchants(_organizationId: string | null): Promise<Mer
     ifoodMerchantId: m.ifoodMerchantId,
     name: m.name ?? m.ifoodMerchantId,
     corporateName: m.corporateName,
-    city: null, // não persistido no MVP — exibir "—"
+    city: null,
     status: m.status,
     lastSyncedAt: m.lastSyncedAt ? m.lastSyncedAt.toISOString() : null,
   }));
@@ -85,7 +64,7 @@ export async function getCurrentOrganization(
     name: org.name,
     document: org.document,
     createdAt: org.createdAt.toISOString(),
-    ifoodConnected: true, // otimista — refinar com ifoodCredentials
+    ifoodConnected: true,
     ifoodLastSyncAt: null,
   };
 }
@@ -96,7 +75,6 @@ export async function listUsers(_organizationId: string | null): Promise<UserSum
   if (isDemoMode()) {
     return DEMO_USERS;
   }
-  // Em produção, virá de um novo repositório users por OrganizationUser.
   return [];
 }
 
@@ -110,7 +88,7 @@ export async function listCategories(organizationId: string | null): Promise<Cat
   }
   if (!organizationId) return [];
   const { categoryRepo } = await import('@/repositories/categories');
-  const rows = await categoryRepo.list(organizationId);
+  const rows = await categoryRepo.findMany({ organizationId });
   return rows.map(c => ({
     id: c.id,
     name: c.name,
@@ -134,11 +112,14 @@ export async function listProducts(organizationId: string | null, categoryId?: s
   }
   if (!organizationId) return [];
   const { productRepo } = await import('@/repositories/products');
-  const rows = await productRepo.list(organizationId, categoryId);
+  const { productPriceRepo } = await import('@/repositories/product-prices');
+  const rows = await productRepo.findMany({ organizationId, categoryId });
 
-  // Fetch latest price for each product
   const results = await Promise.all(rows.map(async (p) => {
-    const priceRow = await productRepo.getLatestPrice(p.id);
+    const priceRow = await productPriceRepo.findLatest({
+      organizationId,
+      productId: p.id,
+    });
     return {
       id: p.id,
       categoryId: p.categoryId,
@@ -149,6 +130,75 @@ export async function listProducts(organizationId: string | null, categoryId?: s
     };
   }));
   return results;
+}
+
+// ---- Analytics ------------------------------------------------------------------
+
+export async function getDashboardAnalytics(organizationId: string | null) {
+  if (isDemoMode()) {
+    return {
+      revenueOverTime: [
+        { date: '2026-09-01', value: 1200 },
+        { date: '2026-09-02', value: 1500 },
+        { date: '2026-09-03', value: 1100 },
+        { date: '2026-09-04', value: 1800 },
+        { date: '2026-09-05', value: 2100 },
+        { date: '2026-09-06', value: 1600 },
+        { date: '2026-09-07', value: 2500 },
+      ],
+      statusDistribution: [
+        { status: 'DELIVERED', count: 150 },
+        { status: 'CANCELLED', count: 20 },
+        { status: 'PLACED', count: 30 },
+        { status: 'CONFIRMED', count: 45 },
+        { status: 'DISPATCHED', count: 15 },
+      ],
+    };
+  }
+
+  if (!organizationId) return null;
+
+  const { prisma } = await import('@/lib/db/prisma');
+  const { withTenantContext } = await import('@/lib/db/tenant');
+
+  return withTenantContext(organizationId, async (tx) => {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const revenueData = await tx.order.groupBy({
+      by: ['createdAt'],
+      where: {
+        organizationId,
+        createdAt: { gte: sevenDaysAgo },
+      },
+      _sum: { total: true },
+    });
+
+    const revenueMap: Record<string, number> = {};
+    for (const entry of revenueData) {
+      const date = entry.createdAt.toISOString().split('T')[0];
+      if (date) {
+        revenueMap[date] = (revenueMap[date] || 0) + Number(entry._sum.total || 0);
+      }
+    }
+
+    const revenueOverTime = Object.entries(revenueMap)
+      .map(([date, value]) => ({ date, value }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    const statusData = await tx.order.groupBy({
+      by: ['status'],
+      where: { organizationId },
+      _count: { id: true },
+    });
+
+    const statusDistribution = statusData.map((s) => ({
+      status: s.status,
+      count: s._count.id,
+    }));
+
+    return { revenueOverTime, statusDistribution };
+  });
 }
 
 // ---- Orders --------------------------------------------------------------------
@@ -193,7 +243,7 @@ export async function getOrderDetail(orderId: string, organizationId: string | n
   }
   if (!organizationId) return null;
   const { orderRepo } = await import('@/repositories/orders');
-  const order = await orderRepo.findById(orderId, organizationId);
+  const order = await orderRepo.findById({ id: orderId, organizationId });
   if (!order) return null;
   return {
     id: order.id,
@@ -213,6 +263,6 @@ export async function getOrderDetail(orderId: string, organizationId: string | n
       unitPrice: Number(i.unitPrice),
       totalPrice: Number(i.totalPrice),
     })),
-    statusHistory: [], // Order status history not yet implemented in Prisma schema
+    statusHistory: [],
   };
 }

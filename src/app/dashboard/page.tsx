@@ -3,14 +3,19 @@ import { AppShell } from '@/components/layout/AppShell';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { IntegrationStatus } from '@/components/dashboard/IntegrationStatus';
 import { MerchantTable } from '@/components/merchants/MerchantTable';
+import { AnalyticsCharts } from '@/components/dashboard/AnalyticsCharts';
 import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { getPageContext } from '@/lib/auth/page-context';
-import { listMerchants } from '@/lib/data';
+import { listMerchants, getDashboardAnalytics } from '@/lib/data';
 import { requireSession } from '@/lib/auth/session';
 
 // Página autenticada — sempre dinâmica (depende da sessão do Supabase).
 export const dynamic = 'force-dynamic';
+
+export const metadata = {
+  title: 'Dashboard · MarmitaOS',
+};
 
 export default async function DashboardPage() {
   const ctx = await getPageContext();
@@ -19,6 +24,7 @@ export default async function DashboardPage() {
   if (!ctx.isDemo) await requireSession();
 
   const merchants = await listMerchants(ctx.user.organizationId);
+  const analytics = await getDashboardAnalytics(ctx.user.organizationId);
   const activeMerchants = merchants.filter((m) => (m.status ?? '').toUpperCase() === 'OPEN').length;
   const total = merchants.length;
 
@@ -98,20 +104,22 @@ export default async function DashboardPage() {
         />
       </section>
 
-      <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <div>
-                <CardTitle>Lojas da organização</CardTitle>
-                <CardDescription>{total} loja(s) vinculada(s) ao iFood</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Lojas da organização</CardTitle>
+                  <CardDescription>{total} loja(s) vinculada(s) ao iFood</CardDescription>
+                </div>
+                <Link
+                  href="/lojas"
+                  className="text-sm font-medium text-brand-600 hover:text-brand-700"
+                >
+                  Ver todas →
+                </Link>
               </div>
-              <Link
-                href="/lojas"
-                className="text-sm font-medium text-brand-600 hover:text-brand-700"
-              >
-                Ver todas →
-              </Link>
             </CardHeader>
             <CardBody className="p-0">
               {merchants.length === 0 ? (
@@ -125,6 +133,8 @@ export default async function DashboardPage() {
               )}
             </CardBody>
           </Card>
+
+          <AnalyticsCharts data={analytics ?? { revenueOverTime: [], statusDistribution: [] }} />
         </div>
 
         <div className="space-y-4">
@@ -135,17 +145,18 @@ export default async function DashboardPage() {
 
           <Card>
             <CardHeader>
-              <div>
-                <CardTitle>Desempenho operacional</CardTitle>
-                <CardDescription>Em breve</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Desempenho operacional</CardTitle>
+                  <CardDescription>Resumo rápido</CardDescription>
+                </div>
+                <Badge tone="warning">Ativo</Badge>
               </div>
-              <Badge tone="warning">Em breve</Badge>
             </CardHeader>
             <CardBody>
               <p className="text-sm text-ink-600">
-                Dados de pedidos serão exibidos após a integração do módulo de pedidos.
-                A base técnica já está preparada — quando o módulo entrar no ar, este
-                card se transforma em um gráfico de receita e ticket médio por loja.
+                O monitoramento de performance agora inclui gráficos de faturamento e
+                distribuição de status de pedidos em tempo real.
               </p>
             </CardBody>
           </Card>

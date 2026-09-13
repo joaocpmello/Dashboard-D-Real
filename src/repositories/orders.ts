@@ -4,6 +4,8 @@ import { withTenantContext } from '@/lib/db/tenant';
 import type { Order, OrderItem } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 
+export type OrderWithItems = Prisma.OrderGetPayload<{ include: { items: true } }>;
+
 const isUuid = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
 
 export const orderRepo = {
@@ -37,7 +39,7 @@ export const orderRepo = {
   async findById(input: {
     organizationId: string;
     id: string;
-  }): Promise<Order | null> {
+  }): Promise<OrderWithItems | null> {
     if (!isUuid(input.organizationId)) return null;
 
     return withTenantContext(input.organizationId, async (tx) => {

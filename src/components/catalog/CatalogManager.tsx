@@ -1,4 +1,5 @@
 'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Table, THead, TBody, TR, TH, TD, TableEmpty } from '@/components/ui/Table';
@@ -20,12 +21,6 @@ export function CatalogManager({ categories, initialProducts }: Props) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  useEffect(() => {
-    if (selectedCatId) {
-      fetchProducts();
-    }
-  }, [selectedCatId, fetchProducts]);
-
   const fetchProducts = useCallback(async () => {
     try {
       const res = await fetch(`/api/catalog?categoryId=${selectedCatId}`);
@@ -36,6 +31,12 @@ export function CatalogManager({ categories, initialProducts }: Props) {
       console.error('Erro ao carregar produtos', e);
     }
   }, [selectedCatId]);
+
+  useEffect(() => {
+    if (selectedCatId) {
+      fetchProducts();
+    }
+  }, [selectedCatId, fetchProducts]);
 
   function toggleProduct(id: string) {
     const next = new Set(selectedProductIds);
@@ -52,10 +53,11 @@ export function CatalogManager({ categories, initialProducts }: Props) {
     }
   }
 
+  const adjValue = parseFloat(adjustment || '0');
   const preview = products
     .filter(p => selectedProductIds.has(p.id))
     .map(p => {
-      const multiplier = 1 + (parseFloat(adjustment || '0') / 100);
+      const multiplier = 1 + adjValue / 100;
       const newPrice = Math.round(p.price * multiplier * 100) / 100;
       return { ...p, newPrice };
     });
@@ -68,7 +70,7 @@ export function CatalogManager({ categories, initialProducts }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productIds: Array.from(selectedProductIds),
-          adjustment: parseFloat(adjustment),
+          adjustment: adjValue,
         }),
       });
 
@@ -77,7 +79,6 @@ export function CatalogManager({ categories, initialProducts }: Props) {
       setIsPreviewOpen(false);
       setSelectedProductIds(new Set());
       setAdjustment('0');
-      // Refresh products
       fetchProducts();
     } catch (e: any) {
       alert(e.message);
@@ -149,7 +150,7 @@ export function CatalogManager({ categories, initialProducts }: Props) {
           <Table>
             <THead>
               <TR>
-                <TH className="w-10"></TH>
+                <TH className="w-10"> </TH>
                 <TH>Produto</TH>
                 <TH className="text-right">Preço Atual</TH>
                 <TH className="text-center">Status</TH>
@@ -162,7 +163,6 @@ export function CatalogManager({ categories, initialProducts }: Props) {
                 products.map(p => (
                   <TR
                     key={p.id}
-                    className={`group cursor-pointer transition-colors ${selectedProductIds.has(p.id) ? 'bg-brand-50/50' : 'hover:bg-ink-50'}`}
                     onClick={() => toggleProduct(p.id)}
                   >
                     <TD>
@@ -202,8 +202,8 @@ export function CatalogManager({ categories, initialProducts }: Props) {
         >
           <div className="space-y-6">
             <p className="text-sm text-ink-600">
-              Você está aplicando um ajuste de <strong className={parseFloat(adjustment) > 0 ? 'text-success-600' : 'text-danger-600'}>
-                {adjustment > 0 ? `+${adjustment}%` : `${adjustment}%`}
+              Você está aplicando um ajuste de <strong className={adjValue > 0 ? 'text-success-600' : 'text-danger-600'}>
+                {adjValue > 0 ? `+${adjustment}%` : `${adjustment}%`}
               </strong> a {preview.length} produtos.
             </p>
 

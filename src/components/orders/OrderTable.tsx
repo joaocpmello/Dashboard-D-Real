@@ -34,7 +34,6 @@ export function OrderTable({ orders }: OrderTableProps) {
               <TR
                 key={order.id}
                 onClick={() => setSelectedOrderId(order.id)}
-                className="cursor-pointer hover:bg-ink-50 transition-colors"
               >
                 <TD className="font-mono text-xs">{order.ifoodOrderId}</TD>
                 <TD>{order.customerName ?? '—'}</TD>
