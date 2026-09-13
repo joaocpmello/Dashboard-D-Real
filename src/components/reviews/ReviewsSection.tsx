@@ -61,11 +61,11 @@ export function ReviewsSection({ merchantId }: Props) {
               <div className="flex-1 h-2 bg-ink-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-brand-500"
-                  style={{ width: `${(summary.distribution[star as keyof typeof summary.distribution] / (summary.totalReviews || 1)) * 100}%` }}
+                  style={{ width: `${((summary.distribution[star as keyof typeof summary.distribution] ?? 0) / (summary.totalReviews || 1)) * 100}%` }}
                 />
               </div>
               <span className="text-xs text-ink-400 w-8 text-right">
-                {summary.distribution[star as keyof typeof summary.distribution]}
+                {summary.distribution[star as keyof typeof summary.distribution] ?? 0}
               </span>
             </div>
           ))}

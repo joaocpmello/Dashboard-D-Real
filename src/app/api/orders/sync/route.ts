@@ -11,14 +11,16 @@ const SyncSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await RBACService.requireRole('ADMIN');
+    const organizationId = session.organizationId;
+    if (!organizationId) {
+      return NextResponse.json({ error: 'Organização não definida' }, { status: 400 });
+    }
     const body = await req.json();
     const { merchantId } = SyncSchema.parse(body);
 
-    if (!session.organizationId) throw new Error('Organização não definida');
-
     const service = new IfoodOrderService();
     const result = await service.syncOrders({
-      organizationId: session.organizationId,
+      organizationId,
       actorUserId: session.id,
       merchantId,
     });

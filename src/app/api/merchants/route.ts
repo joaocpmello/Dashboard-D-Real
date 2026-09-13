@@ -8,10 +8,11 @@ import { merchantRepo } from '@/repositories/merchants';
 export async function GET() {
   try {
     const session = await RBACService.requireRole('VIEWER');
-    if (!session.organizationId) {
+    const organizationId = session.organizationId;
+    if (!organizationId) {
       return Response.json({ error: 'no_organization' }, { status: 400 });
     }
-    const merchants = await merchantRepo.list(session.organizationId);
+    const merchants = await merchantRepo.list(organizationId);
     return Response.json({ merchants });
   } catch (err) {
     return toErrorResponse(err);
@@ -29,12 +30,13 @@ const credsSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await RBACService.requireRole('ADMIN');
-    if (!session.organizationId) {
+    const organizationId = session.organizationId;
+    if (!organizationId) {
       return Response.json({ error: 'no_organization' }, { status: 400 });
     }
     const input = credsSchema.parse(await req.json());
 
-    if (input.organizationId !== session.organizationId && !session.isSuperAdmin) {
+    if (input.organizationId !== organizationId && !session.isSuperAdmin) {
       return Response.json({ error: 'forbidden' }, { status: 403 });
     }
 

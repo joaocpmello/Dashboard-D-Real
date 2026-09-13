@@ -16,13 +16,16 @@ const QuerySchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const session = await requireSession();
-    if (!session.organizationId) throw new Error('Organização não definida');
+    const organizationId = session.organizationId;
+    if (!organizationId) {
+      return NextResponse.json({ error: 'Organização não definida' }, { status: 400 });
+    }
 
     const { searchParams } = new URL(req.url);
     const query = QuerySchema.parse(Object.fromEntries(searchParams));
 
     const orders = await orderRepo.findMany({
-      organizationId: session.organizationId,
+      organizationId,
       merchantId: query.merchantId,
       status: query.status as any,
       startTime: query.startTime ? new Date(query.startTime) : undefined,

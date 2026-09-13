@@ -20,14 +20,17 @@ const BulkPriceUpdateSchema = z.object({
 export async function PATCH(req: NextRequest) {
   try {
     const session = await RBACService.requireRole('ADMIN');
-    if (!session.organizationId) throw new Error('Organização não definida');
+    const organizationId = session.organizationId;
+    if (!organizationId) {
+      return NextResponse.json({ error: 'Organização não definida' }, { status: 400 });
+    }
 
     const body = await req.json();
     const { ifoodProductId, newPrice } = PriceUpdateSchema.parse(body);
 
     const service = new IfoodCatalogService();
     await service.updatePrice({
-      organizationId: session.organizationId,
+      organizationId,
       ifoodProductId,
       newPrice,
     });
@@ -41,7 +44,10 @@ export async function PATCH(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await RBACService.requireRole('ADMIN');
-    if (!session.organizationId) throw new Error('Organização não definida');
+    const organizationId = session.organizationId;
+    if (!organizationId) {
+      return NextResponse.json({ error: 'Organização não definida' }, { status: 400 });
+    }
 
     const body = await req.json();
     const { productIds, adjustment } = BulkPriceUpdateSchema.parse(body);
@@ -52,7 +58,7 @@ export async function POST(req: NextRequest) {
     const products = await prisma.product.findMany({
       where: {
         id: { in: productIds },
-        organizationId: session.organizationId,
+        organizationId,
       },
     });
 
@@ -65,7 +71,7 @@ export async function POST(req: NextRequest) {
       products.map(async (p) => {
         // Get latest price for calculation
         const priceRow = await productPriceRepo.findLatest({
-          organizationId: session.organizationId,
+          organizationId,
           productId: p.id,
         });
 
@@ -76,7 +82,7 @@ export async function POST(req: NextRequest) {
         const newPrice = Math.round(currentPrice * multiplier * 100) / 100;
 
         await service.updatePrice({
-          organizationId: session.organizationId,
+          organizationId,
           ifoodProductId: p.ifoodProductId!,
           newPrice,
         });

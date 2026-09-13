@@ -14,11 +14,7 @@ export interface IfoodReviewSummary {
   averageRating: number;
   totalReviews: number;
   distribution: {
-    1: number;
-    2: number;
-    3: number;
-    4: number;
-    5: number;
+    [key: number]: number;
   };
 }
 
@@ -31,31 +27,33 @@ export class IfoodReviewService {
     this.auth = auth;
   }
 
-  async getReviews(merchantId: string, organizationId: string, environment: 'sandbox' | 'production') {
+  async getReviews(merchantId: string, organizationId: string, environment: 'sandbox' | 'production'): Promise<IfoodReview[]> {
     const token = await this.auth.getAccessToken(organizationId, environment);
 
     try {
-      // Mocking the iFood review endpoint as it varies by API version
-      // In real: GET /merchant/{merchantId}/reviews
-      const response = await this.client.get(`/merchant/${merchantId}/reviews`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await this.client.request<IfoodReview[]>({
+        path: `/merchant/${merchantId}/reviews`,
+        bearerToken: token,
       });
 
-      return response.data;
+      return response;
     } catch (error) {
-      throw error instanceof IfoodError ? error : new IfoodError('Erro ao buscar avaliações do iFood', 500);
+      throw error instanceof IfoodError ? error : new IfoodError(500, 'IFOOD_REVIEWS_ERROR', 'Erro ao buscar avaliações do iFood');
     }
   }
 
-  async getReviewSummary(merchantId: string, organizationId: string, environment: 'sandbox' | 'production') {
+  async getReviewSummary(merchantId: string, organizationId: string, environment: 'sandbox' | 'production'): Promise<IfoodReviewSummary> {
     const reviews = await this.getReviews(merchantId, organizationId, environment);
 
     const total = reviews.length;
-    const sum = reviews.reduce((acc, r: IfoodReview) => acc + r.rating, 0);
+    const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
 
-    const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    reviews.forEach((r: IfoodReview) => {
-      distribution[r.rating]++;
+    const distribution: { [key: number]: number } = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    reviews.forEach((r) => {
+      const count = distribution[r.rating];
+      if (count !== undefined) {
+        distribution[r.rating] = count + 1;
+      }
     });
 
     return {

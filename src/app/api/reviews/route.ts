@@ -6,11 +6,17 @@ import { IfoodAuthService } from '@/lib/ifood/auth';
 import { IfoodReviewService } from '@/lib/ifood/reviews';
 import { getServerEnv } from '@/lib/env';
 import { ifoodCredentialRepo } from '@/repositories/ifood-credentials';
+import type { IfoodTokenResponse } from '@/lib/ifood/types/token';
 
 export async function GET(request: NextRequest) {
   try {
     const user = await getSessionUser();
     if (!user) return toErrorResponse(new Error('Unauthorized'), 401);
+
+    const organizationId = user.organizationId;
+    if (!organizationId) {
+      return NextResponse.json({ error: 'Organização não definida' }, { status: 400 });
+    }
 
     const { searchParams } = new URL(request.url);
     const merchantId = searchParams.get('merchantId');
@@ -19,10 +25,9 @@ export async function GET(request: NextRequest) {
     const env = getServerEnv();
     const client = new IfoodClient();
 
-    // Fixed IfoodAuthService instantiation with required dependencies
     const auth = new IfoodAuthService(
-      async (clientId, clientSecret) => {
-        const res = await client.request({
+      async (clientId, clientSecret): Promise<IfoodTokenResponse> => {
+        const res = await client.request<IfoodTokenResponse>({
           method: 'POST',
           path: '/oauth/token',
           body: {
@@ -30,7 +35,7 @@ export async function GET(request: NextRequest) {
             client_secret: clientSecret,
             grant_type: 'client_credentials'
           },
-          bearerToken: 'NONE', // OAuth token endpoint doesn't use Bearer
+          bearerToken: 'NONE',
         });
         return res;
       },
@@ -45,8 +50,8 @@ export async function GET(request: NextRequest) {
     const iFoodEnv = (process.env.IFOOD_ENVIRONMENT as 'sandbox' | 'production') || 'sandbox';
 
     const [reviews, summary] = await Promise.all([
-      reviewService.getReviews(merchantId, user.organizationId!, iFoodEnv),
-      reviewService.getReviewSummary(merchantId, user.organizationId!, iFoodEnv),
+      reviewService.getReviews(merchantId, organizationId, iFoodEnv),
+      reviewService.getReviewSummary(merchantId, organizationId, iFoodEnv),
     ]);
 
     return NextResponse.json({ reviews, summary });
