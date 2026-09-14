@@ -434,11 +434,25 @@ Ao final do deploy:
 
 ---
 
-## CONTINUIDADE DA PRÓXIMA SESSÃO
+## FASE 6 — Avaliações e Promoções
 
-**Fase atual:** FASE 4 — Validação E2E real com Supabase provisionado + Deploy.
-**Última etapa concluída:** Seed do SUPER_ADMIN executado com sucesso contra o Supabase real.
-**Última ação executada:** Verificação pós-seed (`scripts/verify-seed.js`) confirmando o espelho `auth.users ↔ public.users` e validações finais (test/typecheck/lint/build) todas verdes.
+**Status:** ✅ Concluída
+
+**O que foi feito:**
+- **Módulo de Avaliações (Reviews):**
+  - Implementado `IfoodReviewService.replyToReview` para responder clientes via API iFood.
+  - Criada API `POST /api/reviews/reply` com permissão `OPERATOR+`.
+  - Desenvolvida página `/avaliacoes` com StatCards de satisfação e Feed de avaliações.
+  - Implementado modal de resposta rápida integrado ao feed.
+  - Criado `MerchantSelect` reutilizável para filtragem de lojas em telas de análise.
+- **Módulo de Promoções (Promotions):**
+  - Implementado `IfoodPromotionService` para consumo de campanhas ativas.
+  - Criada API `GET /api/promotions` para listagem de descontos.
+  - Desenvolvida página `/promocoes` com tabela de campanhas, valores de desconto e prazos.
+
+**Validações executadas:**
+- `npm run typecheck` → 0 erros.
+- `npm run build` → ✓ Compiled successfully.
 
 ### Resultado do seed (2026-08-18)
 

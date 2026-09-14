@@ -62,4 +62,23 @@ export class IfoodReviewService {
       distribution,
     };
   }
+
+  async replyToReview(merchantId: string, reviewId: string, organizationId: string, environment: 'sandbox' | 'production', replyText: string): Promise<{ success: boolean }> {
+    const token = await this.auth.getAccessToken(organizationId, environment);
+
+    try {
+      await this.client.request({
+        method: 'POST',
+        path: `/merchant/${merchantId}/reviews/${reviewId}/reply`,
+        bearerToken: token,
+        body: {
+          text: replyText,
+        },
+      });
+
+      return { success: true };
+    } catch (error) {
+      throw error instanceof IfoodError ? error : new IfoodError(500, 'IFOOD_REVIEW_REPLY_ERROR', 'Erro ao responder avaliação do iFood');
+    }
+  }
 }

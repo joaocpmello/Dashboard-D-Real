@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/Badge';
 import { Table, THead, TBody, TR, TH, TD, TableEmpty } from '@/components/ui/Table';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Button } from '@/components/ui/Button';
+import { Input, Label } from '@/components/ui/Input';
 import type { IfoodReview, IfoodReviewSummary } from '@/lib/ifood/reviews';
 
 type Props = {
@@ -15,6 +17,11 @@ export function ReviewsSection({ merchantId }: Props) {
   const [data, setData] = useState<{ reviews: IfoodReview[], summary: IfoodReviewSummary } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Modal state
+  const [replyingTo, setReplyingTo] = useState<IfoodReview | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     async function fetchReviews() {
@@ -32,6 +39,36 @@ export function ReviewsSection({ merchantId }: Props) {
     }
     fetchReviews();
   }, [merchantId]);
+
+  async function handleReply(e: React.FormEvent) {
+    e.preventDefault();
+    if (!replyingTo) return;
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/reviews/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          merchantId,
+          reviewId: replyingTo.id,
+          text: replyText,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Erro ao enviar resposta.');
+
+      setReplyingTo(null);
+      setReplyText('');
+      // Refresh data
+      const refreshed = await fetch(`/api/reviews?merchantId=${merchantId}`).then(r => r.json());
+      setData(refreshed);
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   if (loading) return <div className="py-12 text-center text-ink-400">Carregando avaliações...</div>;
   if (error) return <div className="py-12 text-center text-danger-600">{error}</div>;
@@ -78,6 +115,7 @@ export function ReviewsSection({ merchantId }: Props) {
               <TH className="text-center">Nota</TH>
               <TH>Comentário</TH>
               <TH className="text-right">Data</TH>
+              <TH className="text-right">Ação</TH>
             </TR>
           </THead>
           <TBody>
@@ -96,12 +134,68 @@ export function ReviewsSection({ merchantId }: Props) {
                   <TD className="text-right text-xs text-ink-400">
                     {format(new Date(review.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
                   </TD>
+                  <TD className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setReplyingTo(review);
+                        setReplyText('');
+                      }}
+                    >
+                      Responder
+                    </Button>
+                  </TD>
                 </TR>
               ))
             )}
           </TBody>
         </Table>
       </CardBody>
+
+      {replyingTo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/50 backdrop-blur-sm">
+          <Card className="w-full max-w-md shadow-xl">
+            <CardHeader>
+              <CardTitle>Responder Avaliação</CardTitle>
+              <CardDescription>
+                Sua resposta será enviada diretamente para o cliente via iFood.
+              </CardDescription>
+            </CardHeader>
+            <CardBody>
+              <form onSubmit={handleReply} className="space-y-4">
+                <div className="p-3 rounded-lg bg-ink-50 text-sm italic text-ink-600 border border-ink-100">
+                  &quot;{replyingTo.comment ?? 'Sem comentário'}&quot;
+                </div>
+                <div className="space-y-2">
+                  <Label>Sua resposta</Label>
+                  <Input
+                    value={replyText}
+                    onChange={e => setReplyText(e.target.value)}
+                    placeholder="Ex: Obrigado pelo feedback! Ficamos felizes que gostou..."
+                    required
+                  />
+                </div>
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setReplyingTo(null)}
+                    disabled={isSubmitting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Enviando...' : 'Enviar Resposta'}
+                  </Button>
+                </div>
+              </form>
+            </CardBody>
+          </Card>
+        </div>
+      )}
     </Card>
   );
 }
