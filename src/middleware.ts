@@ -1,25 +1,32 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { checkRateLimit } from '@/lib/security/rate-limit';
 
 // Rotas públicas que não exigem sessão
 const PUBLIC_ROUTES = new Set(['/login', '/cadastro', '/auth/callback', '/auth/confirm']);
 
 export async function middleware(request: NextRequest) {
-  // Expõe o pathname para Server Components lerem via headers().
-  // (Next não dá pathname direto em RSC sem um forward.)
+  const { pathname } = request.nextUrl;
+
+  // 1. Geração de Nonce para CSP
+  const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('base64');
+
+  // 2. Identificação do Cliente para Rate Limiting
+  // Priorizamos User ID se estiver autenticado, caso contrário usamos o IP.
+  const ip = request.ip ?? '127.0.0.1';
+  let identifier = ip;
+
+  // --- Setup Supabase ---
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-pathname', request.nextUrl.pathname);
+  requestHeaders.set('x-pathname', pathname);
+  requestHeaders.set('x-nonce', nonce); // Passamos o nonce via header para RSCs
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
 
-  // O middleware roda no Edge Runtime — não importa lib/env (server-only Node).
-  // Validamos de forma defensiva e seguimos sem refresh de sessão se faltar env
-  // (a página de login ainda renderiza; requireSession falhará depois).
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anon) {
-    // Sem env, deixa passar — a página alvo ainda vai chamar getSessionUser
-    // que também validará, retornando erro útil.
     return response;
   }
 
@@ -37,27 +44,53 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Refresca a sessão se houver token válido — escreve cookie atualizado em `response`.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
+  if (user) {
+    identifier = user.id;
+  }
+
+  // 3. Verificação de Rate Limiting
+  const rateLimit = await checkRateLimit(pathname, identifier);
+  if (!rateLimit.success) {
+    return new NextResponse('Too Many Requests', {
+      status: 429,
+      headers: { 'Retry-After': rateLimit.reset?.toString() || '3600' }
+    });
+  }
+
+  // 4. Controle de Acesso (Auth)
   const isPublic = PUBLIC_ROUTES.has(pathname);
 
   if (!user && !isPublic) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    url.searchParams.set('next', pathname);
-    return NextResponse.redirect(url);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/login';
+    redirectUrl.searchParams.set('next', pathname);
+    return NextResponse.redirect(redirectUrl);
   }
 
   if (user && (pathname === '/login' || pathname === '/cadastro')) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
-    url.searchParams.delete('next');
-    return NextResponse.redirect(url);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/dashboard';
+    redirectUrl.searchParams.delete('next');
+    return NextResponse.redirect(redirectUrl);
   }
+
+  // 5. Aplicação de Headers de Segurança e CSP
+  const csp = [
+    `default-src 'self'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `style-src 'self' 'unsafe-inline'`,
+    `img-src 'self' data: blob:`,
+    `connect-src 'self' *.supabase.co`,
+    `frame-ancestors 'none'`,
+    `base-uri 'self'`,
+    `form-action 'self'`,
+  ].join('; ');
+
+  response.headers.set('Content-Security-Policy', csp);
 
   return response;
 }
