@@ -58,6 +58,7 @@ model Organization {
   categories Category[]
   products  Product[]
   prices    ProductPrice[]
+  costs     ProductCost[]
 
   @@map("organizations")
 }
@@ -253,6 +254,7 @@ model Product {
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   merchant        Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   prices          ProductPrice[]
+  cost            ProductCost?
 
   @@unique([organizationId, ifoodProductId])
   @@index([organizationId])
@@ -274,4 +276,20 @@ model ProductPrice {
   @@index([organizationId])
   @@index([productId])
   @@map("product_prices")
+}
+
+model ProductCost {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  productId      String   @unique @map("product_id")
+  cost           Decimal  @db.Decimal(10, 2)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, productId])
+  @@index([organizationId])
+  @@map("product_costs")
 }

@@ -23,3 +23,27 @@
 - `npm run typecheck` → 0 erros.
 - `npm test` → Passando.
 - `npm run build` → ✓ Compiled successfully.
+
+## FASE 8 — BI, Margem de Lucro & Alertas
+
+**Status:** ✅ Concluída
+
+**Módulo 1: Engenharia de Cardápio & Análise de Margem**
+- Prisma Schema: Implementação da tabela `ProductCost` para gestão de CMV.
+- API `GET /api/catalog/margins`: Cálculo de Margem Bruta e Lucro Líquido considerando taxas iFood.
+- API `PATCH /api/catalog/costs`: Atualização de custo de produção por produto.
+- Frontend `/margem`: Tabela de rentabilidade com alertas visuais para margens baixas e edição inline de CMV.
+
+**Módulo 2: Alertas e Painel de Incidentes**
+- API `GET /api/incidents`: Detecção de anomalias (lojas fechadas no pico, cancelamentos > 5%, falhas de conexão).
+- Frontend `/alertas`: Central de notificações com severidade (Crítico, Atenção, Info) e ações rápidas.
+- Dashboard: Implementação do `AlertsWidget` para visibilidade imediata de incidentes críticos.
+
+**Módulo 3: Polimento & UX**
+- Sidebar: Adição de links para `/margem` e `/alertas`.
+- UX Hardening: Suporte responsivo para novas tabelas e modais.
+
+**Validações executadas:**
+- `npm run typecheck` → 0 erros.
+- `npm test` → Passando.
+- `npm run build` → ✓ Compiled successfully.

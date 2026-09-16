@@ -4,6 +4,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { IntegrationStatus } from '@/components/dashboard/IntegrationStatus';
 import { MerchantTable } from '@/components/merchants/MerchantTable';
 import { AnalyticsCharts } from '@/components/dashboard/AnalyticsCharts';
+import { AlertsWidget } from '@/components/dashboard/AlertsWidget';
 import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { getPageContext } from '@/lib/auth/page-context';
@@ -142,6 +143,8 @@ export default async function DashboardPage() {
             connected={ctx.org?.ifoodConnected ?? false}
             lastSyncAt={ctx.org?.ifoodLastSyncAt ?? null}
           />
+
+          <AlertsWidget />
 
           <Card>
             <CardHeader>

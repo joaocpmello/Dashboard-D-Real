@@ -37,8 +37,8 @@ export function TH({ children, className = '' }: { children: ReactNode; classNam
   return <th className={`px-4 py-3 font-medium ${className}`}>{children}</th>;
 }
 
-export function TD({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <td className={`px-4 py-3 text-ink-700 ${className}`}>{children}</td>;
+export function TD({ children, className = '', colSpan }: { children: ReactNode; className?: string; colSpan?: number }) {
+  return <td colSpan={colSpan} className={`px-4 py-3 text-ink-700 ${className}`}>{children}</td>;
 }
 
 export function TableEmpty({ message }: { message: string }) {
