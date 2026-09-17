@@ -54,6 +54,11 @@ export function AppShell({
 
   return (
     <div className="flex min-h-screen bg-ink-50">
+      {isDemo && (
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-brand-600 text-white text-center py-1 text-xs font-medium">
+          Modo de Demonstração Ativo — Dados simulados para apresentação
+        </div>
+      )}
       {/* Sidebar desktop (≥md) */}
       <div className="hidden md:block">
         <Sidebar {...navProps} />
@@ -79,7 +84,7 @@ export function AppShell({
             </div>
           }
         />
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
+        <main className={`flex-1 px-4 py-6 md:px-8 md:py-8 ${isDemo ? 'mt-6' : ''}`}>
           <div className="mx-auto w-full max-w-7xl">{children}</div>
         </main>
       </div>

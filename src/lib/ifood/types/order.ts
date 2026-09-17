@@ -45,6 +45,19 @@ export interface IfoodOrderItem {
   totalPrice: number;
 }
 
+export interface IfoodEvent {
+  id: string;
+  type: string;
+  entityId: string;
+  createdAt: string;
+  payload: any;
+}
+
+export interface IfoodEventPollingResponse {
+  events: IfoodEvent[];
+  nextPollingInterval: number;
+}
+
 export interface IfoodOrderFilter {
   status?: OrderStatus;
   startTime?: string;

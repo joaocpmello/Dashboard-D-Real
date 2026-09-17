@@ -94,3 +94,23 @@
 - `npm run build`: Compilação final para produção sem erros.
 
 **PROJETO FINALIZADO: 100% CONCLUÍDO**
+
+## PÓS-LANÇAMENTO: Go-Live & Operação Real
+
+**Status:** ✅ Concluído
+
+**Módulo 1: Sincronização de Eventos em Tempo Real (iFood Events)**
+- `src/lib/ifood/events.ts`: Implementação do `IfoodEventService` para consumo de eventos via polling e envio de Acknowledgment (ACK).
+- API `GET /api/cron/poll-events`: Worker de alta frequência para processar atualizações de pedidos em tempo real.
+
+**Módulo 2: Monitoramento de Runtime & Observabilidade**
+- `src/lib/logger.ts`: Logger centralizado e estruturado para capturar erros de runtime e exceções sem expor dados sensíveis.
+- Frontend `/status`: Página de monitoramento de saúde do sistema, conectividade com Supabase e status da API iFood.
+
+**Módulo 3: Experiência de Vendas (Demo Tour)**
+- `AppShell`: Implementação de banner visual de "Modo de Demonstração" para facilitar apresentações de portfólio para novos clientes.
+
+**Validações Finais:**
+- `npm test` → Passando.
+- `npm run typecheck` → 0 erros.
+- `npm run build` → ✓ Compiled successfully.

@@ -10,6 +10,13 @@ export type SessionUser = {
   isSuperAdmin: boolean;
   organizationId: string | null; // null para SUPER_ADMIN sem Org ativa
   role: 'ADMIN' | 'MANAGER' | 'OPERATOR' | 'VIEWER' | null;
+  organization?: {
+    id: string;
+    name: string;
+    document: string;
+    plan: any;
+    maxMerchants: number;
+  } | null;
 };
 
 // Cacheado por request — evita bater no Supabase + Prisma várias vezes.
@@ -22,7 +29,12 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
 
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
-    include: { memberships: { take: 1 } },
+    include: {
+      memberships: {
+        include: { organization: true },
+        take: 1
+      },
+    },
   });
   if (!dbUser) return null;
 
@@ -33,6 +45,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
     isSuperAdmin: dbUser.isSuperAdmin,
     organizationId: membership?.organizationId ?? null,
     role: membership?.role ?? null,
+    organization: membership?.organization ?? null,
   };
 });
 

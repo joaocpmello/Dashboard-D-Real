@@ -1,7 +1,9 @@
 import 'server-only';
 import { IfoodAuthError } from '@/lib/ifood/errors';
+import { IfoodClient } from '@/lib/ifood/client';
 import type { IfoodToken, IfoodTokenResponse } from '@/lib/ifood/types/token';
 import type { IfoodEnvironment } from '@/lib/ifood/types/merchant';
+import { ifoodCredentialRepo } from '@/repositories/ifood-credentials';
 
 // Margem de segurança — refresh antes da expiração.
 const SAFETY_MARGIN_SEC = 5 * 60;
@@ -12,16 +14,42 @@ type CacheEntry = {
 };
 
 // Cache por (organizationId, environment) — em memória do processo.
-// Não persiste plaintext; o token em banco é criptografado.
 const cache = new Map<string, CacheEntry>();
 
 function keyOf(orgId: string, env: IfoodEnvironment) {
   return `${orgId}::${env}`;
 }
 
+// Helper interno para buscar token bruto da API do iFood
+async function fetchAccessTokenFromIfood(
+  clientId: string,
+  clientSecret: string,
+): Promise<IfoodTokenResponse> {
+  const client = new IfoodClient();
+  const url = `${client.baseUrl}/authentication/v1.0/oauth/token`;
+  const body = new URLSearchParams({
+    grantType: 'client_credentials',
+    clientId,
+    clientSecret,
+  });
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Accept: 'application/json',
+    },
+    body,
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    throw new Error(`iFood Auth Error: ${res.status}`);
+  }
+  return res.json();
+}
+
 export class IfoodAuthService {
-  // `getAccessToken` recebe um "fetcher de token" para manter este módulo
-  // desacoplado do cliente HTTP e do repositório. Isso facilita testes.
   constructor(
     private readonly fetchToken: (clientId: string, clientSecret: string) => Promise<IfoodTokenResponse>,
     private readonly loadDecryptedCredentials: (organizationId: string, env: IfoodEnvironment) => Promise<{
@@ -60,14 +88,32 @@ export class IfoodAuthService {
     return token.token;
   }
 
-  // Invalida cache local (ex.: ao trocar credenciais).
   invalidate(organizationId: string, env: IfoodEnvironment): void {
     cache.delete(keyOf(organizationId, env));
   }
 
-  // Limpa todo o cache em memória. Usado em testes; nunca chamar em produção
-  // sem motivo — cada entrada é por (org, env) e tem TTL.
   static clearAllCacheForTests(): void {
     cache.clear();
   }
+}
+
+/**
+ * Factory para criar instâncias do IfoodAuthService com as dependências de repositório.
+ */
+export function createIfoodAuthService(): IfoodAuthService {
+  return new IfoodAuthService(
+    fetchAccessTokenFromIfood,
+    async (organizationId, env) => {
+      const c = await ifoodCredentialRepo.loadDecrypted(organizationId, env);
+      return { clientId: c.clientId, clientSecret: c.clientSecret };
+    },
+    async (organizationId, env, token) => {
+      await ifoodCredentialRepo.persistAccessToken(
+        organizationId,
+        env,
+        token.token,
+        token.expiresAt,
+      );
+    },
+  );
 }

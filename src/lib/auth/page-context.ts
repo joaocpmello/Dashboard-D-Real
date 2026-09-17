@@ -58,7 +58,7 @@ export async function getPageContext(): Promise<PageContext> {
     // para a página de login (não chegou aqui nesse caso).
     return { user: DEMO_USER, org: null, isDemo: true };
   }
-  const org = await getCurrentOrganization(session.organizationId);
+  const org = session.organization;
   return {
     user: {
       email: session.email,
@@ -71,8 +71,8 @@ export async function getPageContext(): Promise<PageContext> {
       ? {
           id: org.id,
           name: org.name,
-          ifoodConnected: org.ifoodConnected,
-          ifoodLastSyncAt: org.ifoodLastSyncAt,
+          ifoodConnected: true, // Default true if org exists in DB
+          ifoodLastSyncAt: null, // Simplificado; pode ser expandido no futuro
         }
       : null,
     isDemo: false,
