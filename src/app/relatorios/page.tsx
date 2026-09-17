@@ -35,14 +35,6 @@ export default function ReportsPage() {
     selectedMerchants: [] as string[],
   });
 
-  useEffect(() => {
-    fetchMerchants();
-  }, [fetchMerchants]);
-
-  useEffect(() => {
-    fetchReportData();
-  }, [fetchReportData]);
-
   const fetchMerchants = useCallback(async () => {
     try {
       const res = await fetch('/api/merchants');
@@ -79,6 +71,14 @@ export default function ReportsPage() {
       setLoading(false);
     }
   }, [filters]);
+
+  useEffect(() => {
+    fetchMerchants();
+  }, [fetchMerchants]);
+
+  useEffect(() => {
+    fetchReportData();
+  }, [fetchReportData]);
 
   function handleExport() {
     const params = new URLSearchParams();
