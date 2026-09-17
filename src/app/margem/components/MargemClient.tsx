@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
@@ -48,7 +48,7 @@ export default function MargemPage({
     }
   }, [merchants, selectedMerchant]);
 
-  async function fetchMargins() {
+  const fetchMargins = useCallback(async () => {
     if (!selectedMerchant) return;
     setLoading(true);
     try {
@@ -61,11 +61,11 @@ export default function MargemPage({
     } finally {
       setLoading(false);
     }
-  }
+  }, [selectedMerchant]);
 
   useEffect(() => {
     fetchMargins();
-  }, [selectedMerchant]);
+  }, [fetchMargins]);
 
   async function updateCost(productId: string, cost: number) {
     try {

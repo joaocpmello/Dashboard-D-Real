@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -37,13 +37,13 @@ export default function ReportsPage() {
 
   useEffect(() => {
     fetchMerchants();
-  }, []);
+  }, [fetchMerchants]);
 
   useEffect(() => {
     fetchReportData();
-  }, [filters]);
+  }, [fetchReportData]);
 
-  async function fetchMerchants() {
+  const fetchMerchants = useCallback(async () => {
     try {
       const res = await fetch('/api/merchants');
       const data = await res.json();
@@ -55,9 +55,9 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  async function fetchReportData() {
+  const fetchReportData = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -78,7 +78,7 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [filters]);
 
   function handleExport() {
     const params = new URLSearchParams();

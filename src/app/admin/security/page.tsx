@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
@@ -24,9 +24,9 @@ export default function SecurityPage() {
 
   useEffect(() => {
     fetchInsights();
-  }, [filterOrg]);
+  }, [fetchInsights]);
 
-  async function fetchInsights() {
+  const fetchInsights = useCallback(async () => {
     setLoading(true);
     try {
       const url = `/api/security/insights${filterOrg ? `?organizationId=${filterOrg}` : ''}`;
@@ -40,7 +40,7 @@ export default function SecurityPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [filterOrg]);
 
   const severityColor = (severity: string) => {
     switch (severity) {
