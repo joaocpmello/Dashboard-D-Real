@@ -9,7 +9,7 @@ import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { getPageContext } from '@/lib/auth/page-context';
-import { listMerchants, getDashboardAnalytics } from '@/lib/data';
+import { listMerchants, getDashboardAnalytics, getTodayStats } from '@/lib/data';
 import { requireSession } from '@/lib/auth/session';
 
 // Página autenticada — sempre dinâmica (depende da sessão do Supabase).
@@ -27,6 +27,7 @@ export default async function DashboardPage() {
 
   const merchants = await listMerchants(ctx.user.organizationId);
   const analytics = await getDashboardAnalytics(ctx.user.organizationId);
+  const todayStats = await getTodayStats(ctx.user.organizationId);
   const activeMerchants = merchants.filter((m) => (m.status ?? '').toUpperCase() === 'OPEN').length;
   const total = merchants.length;
 
@@ -81,8 +82,8 @@ export default async function DashboardPage() {
         />
         <StatCard
           label="Pedidos hoje"
-          value="—"
-          hint="Disponível após integração de pedidos"
+          value={String(todayStats?.orderCount ?? 0)}
+          hint="Pedidos recebidos hoje"
           tone="info"
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
@@ -94,8 +95,8 @@ export default async function DashboardPage() {
         />
         <StatCard
           label="Faturamento hoje"
-          value="—"
-          hint="Disponível após integração de pedidos"
+          value={`R$ ${todayStats?.revenue.toFixed(2) ?? '0.00'}`}
+          hint="Volume total de vendas hoje"
           tone="warning"
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">

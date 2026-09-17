@@ -4,9 +4,9 @@ export function Input({ className = '', ...rest }: InputHTMLAttributes<HTMLInput
   return (
     <input
       className={
-        'h-10 w-full rounded-lg border border-ink-200 bg-white px-3 text-sm text-ink-900 ' +
-        'placeholder:text-ink-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 ' +
-        `disabled:bg-ink-50 disabled:text-ink-500 ${className}`
+        'h-10 w-full rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 px-3 text-sm text-ink-900 dark:text-ink-100 ' +
+        'placeholder:text-ink-400 dark:placeholder:text-ink-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 ' +
+        `disabled:bg-ink-50 dark:disabled:bg-ink-900 disabled:text-ink-500 dark:disabled:text-ink-600 ${className}`
       }
       {...rest}
     />
@@ -21,9 +21,9 @@ export function Select({
   return (
     <select
       className={
-        'h-10 w-full rounded-lg border border-ink-200 bg-white px-3 text-sm text-ink-900 ' +
+        'h-10 w-full rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 px-3 text-sm text-ink-900 dark:text-ink-100 ' +
         'focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 ' +
-        `disabled:bg-ink-50 ${className}`
+        `disabled:bg-ink-50 dark:disabled:bg-ink-900 ${className}`
       }
       {...rest}
     >
@@ -44,7 +44,7 @@ export function Label({
   return (
     <label
       htmlFor={htmlFor}
-      className={`mb-1.5 block text-sm font-medium text-ink-700 ${className}`}
+      className={`mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300 ${className}`}
     >
       {children}
     </label>

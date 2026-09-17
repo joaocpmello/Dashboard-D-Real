@@ -53,7 +53,7 @@ export function AppShell({
   };
 
   return (
-    <div className="flex min-h-screen bg-ink-50">
+    <div className="flex min-h-screen bg-ink-50 dark:bg-ink-950">
       {isDemo && (
         <div className="fixed top-0 left-0 right-0 z-[100] bg-brand-600 text-white text-center py-1 text-xs font-medium">
           Modo de Demonstração Ativo — Dados simulados para apresentação

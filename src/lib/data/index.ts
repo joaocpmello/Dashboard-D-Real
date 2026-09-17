@@ -273,3 +273,35 @@ export async function getOrderDetail(orderId: string, organizationId: string | n
     statusHistory: [],
   };
 }
+
+export async function getTodayStats(organizationId: string | null) {
+  if (isDemoMode()) {
+    return {
+      orderCount: 42,
+      revenue: 850.50,
+    };
+  }
+  if (!organizationId) return null;
+
+  const { prisma } = await import('@/lib/db/prisma');
+  const { withTenantContext } = await import('@/lib/db/tenant');
+
+  return withTenantContext(organizationId, async (tx) => {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const stats = await tx.order.aggregate({
+      where: {
+        organizationId,
+        createdAt: { gte: startOfDay },
+      },
+      _count: { id: true },
+      _sum: { total: true },
+    });
+
+    return {
+      orderCount: stats._count.id,
+      revenue: Number(stats._sum.total || 0),
+    };
+  });
+}
