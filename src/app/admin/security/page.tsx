@@ -22,10 +22,6 @@ export default function SecurityPage() {
   const [anomalies, setAnomalies] = useState<SecurityAnomaly[]>([]);
   const [filterOrg, setFilterOrg] = useState('');
 
-  useEffect(() => {
-    fetchInsights();
-  }, [fetchInsights]);
-
   const fetchInsights = useCallback(async () => {
     setLoading(true);
     try {
@@ -41,6 +37,10 @@ export default function SecurityPage() {
       setLoading(false);
     }
   }, [filterOrg]);
+
+  useEffect(() => {
+    fetchInsights();
+  }, [fetchInsights]);
 
   const severityColor = (severity: string) => {
     switch (severity) {
