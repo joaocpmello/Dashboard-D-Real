@@ -5,6 +5,7 @@ import { IntegrationStatus } from '@/components/dashboard/IntegrationStatus';
 import { MerchantTable } from '@/components/merchants/MerchantTable';
 import { AnalyticsCharts } from '@/components/dashboard/AnalyticsCharts';
 import { AlertsWidget } from '@/components/dashboard/AlertsWidget';
+import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { getPageContext } from '@/lib/auth/page-context';

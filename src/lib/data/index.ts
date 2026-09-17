@@ -1,5 +1,6 @@
 import { DEMO_MERCHANTS, DEMO_ORG, DEMO_USERS, DEMO_ORDERS } from '@/mocks/demo-data';
 import type { MerchantSummary, OrganizationSummary, UserSummary, OrderSummary, CategorySummary, ProductSummary, OrderDetail } from './types';
+import type { Organization } from '@prisma/client';
 
 const isUuid = (id: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
 
@@ -53,11 +54,15 @@ export async function getCurrentOrganization(
   _organizationId: string | null,
 ): Promise<OrganizationSummary | null> {
   if (isDemoMode()) {
-    return DEMO_ORG;
+    return {
+      ...DEMO_ORG,
+      plan: 'PRO',
+      maxMerchants: 10,
+    };
   }
   if (!_organizationId || !isUuid(_organizationId)) return null;
   const { prisma } = await import('@/lib/db/prisma');
-  const org = await prisma.organization.findUnique({ where: { id: _organizationId } });
+  const org = (await prisma.organization.findUnique({ where: { id: _organizationId } })) as any;
   if (!org) return null;
   return {
     id: org.id,
@@ -66,6 +71,8 @@ export async function getCurrentOrganization(
     createdAt: org.createdAt.toISOString(),
     ifoodConnected: true,
     ifoodLastSyncAt: null,
+    plan: org.plan,
+    maxMerchants: org.maxMerchants,
   };
 }
 

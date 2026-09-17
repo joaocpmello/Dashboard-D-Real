@@ -21,6 +21,8 @@ export type OrganizationSummary = {
   createdAt: string;
   ifoodConnected: boolean;
   ifoodLastSyncAt: string | null;
+  plan: 'STARTER' | 'PRO' | 'ENTERPRISE';
+  maxMerchants: number;
 };
 
 export type UserSummary = {

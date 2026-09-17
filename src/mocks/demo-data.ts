@@ -19,6 +19,8 @@ export const DEMO_ORG: OrganizationSummary = {
   createdAt: daysAgo(120),
   ifoodConnected: true,
   ifoodLastSyncAt: hoursAgo(2),
+  plan: 'PRO',
+  maxMerchants: 10,
 };
 
 export const DEMO_MERCHANTS: MerchantSummary[] = [

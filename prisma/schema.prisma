@@ -26,6 +26,12 @@ enum UserRole {
   VIEWER
 }
 
+enum Plan {
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
 enum IfoodEnvironment {
   sandbox
   production
@@ -47,6 +53,8 @@ model Organization {
   id        String   @id @default(uuid())
   name      String
   document  String   @unique
+  plan      Plan     @default(STARTER)
+  maxMerchants Int    @default(2)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
