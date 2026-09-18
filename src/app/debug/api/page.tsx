@@ -69,7 +69,7 @@ export default function ApiDebugPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-ink-800">{endpoint.name}</h3>
-                <Badge variant="outline" className="text-[10px]">
+                <Badge tone="neutral" className="text-[10px]">
                   {endpoint.method}
                 </Badge>
               </div>
