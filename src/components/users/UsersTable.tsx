@@ -137,14 +137,37 @@ export function UsersTable({
                 </TD>
                 <TD className="text-ink-700">{formatRelative(u.lastSignInAt)}</TD>
                 <TD className="text-right">
-                  <button
-                    type="button"
-                    disabled
-                    className="text-sm font-medium text-ink-400"
-                    title="Em breve"
-                  >
-                    Gerenciar
-                  </button>
+                  <div className="flex justify-end gap-2">
+                    {isSuperAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          const res = await promoteToSuperAdmin(u.id);
+                          if (res.success) toast.success(`Usuário ${u.email} promovido!`);
+                          else toast.error(res.error);
+                        }}
+                        disabled={u.isSuperAdmin}
+                        className="text-xs"
+                      >
+                        Promover
+                      </Button>
+                    )}
+                    {isSuperAdmin && u.isSuperAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          const res = await demoteFromSuperAdmin(u.id);
+                          if (res.success) toast.success(`Privilégios removidos de ${u.email}`);
+                          else toast.error(res.error);
+                        }}
+                        className="text-xs text-danger-600 hover:text-danger-700"
+                      >
+                        Remover
+                      </Button>
+                    )}
+                  </div>
                 </TD>
               </TR>
             ))}

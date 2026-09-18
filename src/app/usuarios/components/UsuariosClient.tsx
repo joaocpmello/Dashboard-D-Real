@@ -88,7 +88,11 @@ export default function UsuariosClient({
               </div>
             </CardHeader>
             <CardBody>
-              <UsersTable rows={users} canManage={canManage} />
+              <UsersTable
+                rows={users}
+                canManage={canManage}
+                isSuperAdmin={user?.isSuperAdmin ?? false}
+              />
             </CardBody>
           </Card>
         </div>
