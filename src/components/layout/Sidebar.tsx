@@ -76,6 +76,32 @@ export function Sidebar({
       ),
     },
     {
+      href: '/pedidos',
+      label: 'Pedidos',
+      icon: (
+        <Icon>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+            <path d="M4 4h2l2 12h11l2-8H7" />
+            <circle cx="9" cy="20" r="1.5" />
+            <circle cx="18" cy="20" r="1.5" />
+          </svg>
+        </Icon>
+      ),
+    },
+    {
+      href: '/cardapio',
+      label: 'Cardápio',
+      icon: (
+        <Icon>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+            <path d="M5 3v18" />
+            <path d="M5 6h11a3 3 0 0 1 0 6H5" />
+            <path d="M5 12h12a3 3 0 0 1 0 6H5" />
+          </svg>
+        </Icon>
+      ),
+    },
+    {
       href: '/margem',
       label: 'Margem',
       icon: (
@@ -94,6 +120,44 @@ export function Sidebar({
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
             <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
             <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+          </svg>
+        </Icon>
+      ),
+    },
+    {
+      href: '/avaliacoes',
+      label: 'Avaliações',
+      icon: (
+        <Icon>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+            <path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.8 1-6.1L3.2 9.4l6.1-.9Z" />
+          </svg>
+        </Icon>
+      ),
+    },
+    {
+      href: '/promocoes',
+      label: 'Promoções',
+      icon: (
+        <Icon>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+            <path d="M3 11 11 3h10v10L13 21Z" />
+            <path d="M7 7l.01.01" />
+            <path d="M16 16l.01.01" />
+          </svg>
+        </Icon>
+      ),
+    },
+    {
+      href: '/relatorios',
+      label: 'Relatórios',
+      icon: (
+        <Icon>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+            <path d="M4 20V10" />
+            <path d="M10 20V4" />
+            <path d="M16 20v-8" />
+            <path d="M22 20H2" />
           </svg>
         </Icon>
       ),
@@ -120,79 +184,85 @@ export function Sidebar({
         <Icon>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
             <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l-.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
           </svg>
         </Icon>
       ),
     },
   ];
 
-  const upcoming: NavItem[] = [
+  const system: NavItem[] = [
     {
-      href: '#',
-      label: 'Pedidos',
-      comingSoon: true,
+      href: '/auditoria',
+      label: 'Auditoria',
       icon: (
         <Icon>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
-            <path d="M4 4h2l2 12h11l2-8H7" />
-            <circle cx="9" cy="20" r="1.5" />
-            <circle cx="18" cy="20" r="1.5" />
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            <path d="m9 12 2 2 4-4" />
           </svg>
         </Icon>
       ),
     },
     {
-      href: '#',
-      label: 'Cardápio',
-      comingSoon: true,
+      href: '/status',
+      label: 'Status do Sistema',
       icon: (
         <Icon>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
-            <path d="M5 3v18" />
-            <path d="M5 6h11a3 3 0 0 1 0 6H5" />
-            <path d="M5 12h12a3 3 0 0 1 0 6H5" />
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
           </svg>
         </Icon>
       ),
     },
     {
-      href: '#',
-      label: 'Avaliações',
-      comingSoon: true,
+      href: '/ajuda',
+      label: 'Ajuda',
       icon: (
         <Icon>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
-            <path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.8 1-6.1L3.2 9.4l6.1-.9Z" />
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 0c0 .2- .03.39- .1.57" />
+            <path d="M12 17h.01" />
+          </svg>
+        </Icon>
+      ),
+    },
+  ];
+
+  const admin: NavItem[] = [
+    {
+      href: '/debug/api',
+      label: 'API Explorer',
+      icon: (
+        <Icon>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+            <path d="M10 12h4m-2-2v4M4 12h16M7 12h10" />
+            <path d="M12 2v20" />
           </svg>
         </Icon>
       ),
     },
     {
-      href: '#',
-      label: 'Promoções',
-      comingSoon: true,
+      href: '/admin/organizacoes',
+      label: 'Organizações',
       icon: (
         <Icon>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
-            <path d="M3 11 11 3h10v10L13 21Z" />
-            <path d="M7 7l.01.01" />
-            <path d="M16 16l.01.01" />
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <path d="M3 7l9-4 9 4v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
           </svg>
         </Icon>
       ),
     },
     {
-      href: '#',
-      label: 'Relatórios',
-      comingSoon: true,
+      href: '/admin/security',
+      label: 'Segurança Global',
       icon: (
         <Icon>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
-            <path d="M4 20V10" />
-            <path d="M10 20V4" />
-            <path d="M16 20v-8" />
-            <path d="M22 20H2" />
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
         </Icon>
       ),
@@ -212,7 +282,7 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
-        <div>
+        <div className="space-y-1">
           <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-400">
             Operação
           </p>
@@ -237,27 +307,55 @@ export function Sidebar({
           </ul>
         </div>
 
-        <div>
+        <div className="space-y-1">
           <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-400">
-            Roadmap
+            Sistema
           </p>
           <ul className="space-y-1">
-            {upcoming.map((item) => (
-              <li key={item.label}>
-                <span
-                  className={`${home()} text-ink-400 hover:bg-ink-50 cursor-not-allowed`}
-                  title="Em breve"
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                  <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-ink-400">
-                    <Dot tone="warning" /> Em breve
-                  </span>
-                </span>
-              </li>
-            ))}
+            {system.map((item) => {
+              const isItemActive = isActive(pathname, item.href);
+              return (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    onClick={onNavigate}
+                    className={`${home()} ${isItemActive ? activeClass : idleClass}`}
+                    aria-current={isItemActive ? 'page' : undefined}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
+
+        {isSuperAdmin && (
+          <div className="space-y-1">
+            <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-400">
+              Administração Global
+            </p>
+            <ul className="space-y-1">
+              {admin.map((item) => {
+                const isItemActive = isActive(pathname, item.href);
+                return (
+                  <li key={item.label}>
+                    <Link
+                      href={item.href}
+                      onClick={onNavigate}
+                      className={`${home()} ${isItemActive ? activeClass : idleClass}`}
+                      aria-current={isItemActive ? 'page' : undefined}
+                    >
+                      {item.icon}
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
       </nav>
 
       <div className="border-t border-ink-200 p-3 text-[11px] text-ink-500">
