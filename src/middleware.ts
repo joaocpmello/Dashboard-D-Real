@@ -81,7 +81,7 @@ export async function middleware(request: NextRequest) {
   // 5. Aplicação de Headers de Segurança e CSP
   const csp = [
     `default-src 'self'`,
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval' *.supabase.co`,
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: blob:`,
     `connect-src 'self' *.supabase.co`,
