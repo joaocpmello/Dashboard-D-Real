@@ -68,7 +68,7 @@ function CadastroForm() {
         router.push('/login');
         return;
       }
-      window.location.href = next;
+      router.push(next);
     } catch {
       setError('Não foi possível concluir o cadastro. Tente novamente em instantes.');
       setBusy(false);

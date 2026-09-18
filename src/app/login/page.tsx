@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -24,7 +26,7 @@ export default function LoginPage() {
         setBusy(false);
         return;
       }
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     } catch (err) {
       setError('Não foi possível entrar. Tente novamente em instantes.');
       setBusy(false);

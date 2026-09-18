@@ -95,7 +95,23 @@
 
 **PROJETO FINALIZADO: 100% CONCLUÍDO**
 
+## MANUTENÇÃO CRÍTICA (Setembro 2026)
+
+**Status:** ✅ Concluída
+
+**Correção de Fluxo de Autenticação e Navegação:**
+- Diagnóstico de loop de redirecionamento entre `/login` e `/dashboard` causado por dessincronização entre Supabase Auth e `public.users`.
+- Implementação de fallback gracioso em `src/lib/auth/session.ts` para criar automaticamente o registro no banco de dados para usuários autenticados via Auth.
+- Melhoria na UX de redirecionamento nas páginas de `/login` e `/cadastro` utilizando `router.push` do Next.js.
+- Auditoria de Middleware para garantir correta gestão de cookies e proteção de rotas.
+
+**Validações executadas:**
+- `npm run typecheck` → 0 erros.
+- `npm test` → Passando.
+- `npm run build` → ✓ Compiled successfully.
+
 ## PÓS-LANÇAMENTO: Go-Live & Operação Real
+
 
 **Status:** ✅ Concluído
 

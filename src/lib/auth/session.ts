@@ -27,7 +27,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const dbUser = await prisma.user.findUnique({
+  let dbUser = await prisma.user.findUnique({
     where: { id: user.id },
     include: {
       memberships: {
@@ -36,16 +36,40 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
       },
     },
   });
-  if (!dbUser) return null;
 
-  const membership = dbUser.memberships[0] ?? null;
+  if (!dbUser) {
+    // Fallback gracioso: Cria o registro em public.users se o usuário existir no Auth mas não no DB.
+    const isSuperAdmin = process.env.INITIAL_SUPER_ADMIN_EMAIL === user.email;
+    const created = await prisma.user.create({
+      data: {
+        id: user.id,
+        email: user.email!,
+        fullName: user.user_metadata?.full_name || null,
+        isSuperAdmin: isSuperAdmin,
+      },
+    });
+    dbUser = {
+      ...created,
+      memberships: [],
+    } as any;
+  }
+
+  const membership = (dbUser as any).memberships?.[0] ?? null;
+  const org = membership?.organization;
+
   return {
-    id: dbUser.id,
-    email: dbUser.email,
-    isSuperAdmin: dbUser.isSuperAdmin,
+    id: (dbUser as any).id,
+    email: (dbUser as any).email,
+    isSuperAdmin: (dbUser as any).isSuperAdmin,
     organizationId: membership?.organizationId ?? null,
     role: membership?.role ?? null,
-    organization: membership?.organization ?? null,
+    organization: org ? {
+      id: org.id,
+      name: org.name,
+      document: org.document,
+      plan: (org as any).plan ?? 'FREE',
+      maxMerchants: (org as any).maxMerchants ?? 1,
+    } : null,
   };
 });
 
