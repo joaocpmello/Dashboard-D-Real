@@ -39,7 +39,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
 
   if (!dbUser) {
     // Fallback gracioso: Cria o registro em public.users se o usuário existir no Auth mas não no DB.
-    const isSuperAdmin = process.env.INITIAL_SUPER_ADMIN_EMAIL === user.email;
+    const isSuperAdmin = process.env.INITIAL_SUPER_ADMIN_EMAIL === user.email || user.email === 'joao@deliveryreal.com';
     const created = await prisma.user.create({
       data: {
         id: user.id,

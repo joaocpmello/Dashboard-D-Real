@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
         id: userId,
         email,
         fullName: parsed.data.fullName,
-        isSuperAdmin: false,
+        isSuperAdmin: email === process.env.INITIAL_SUPER_ADMIN_EMAIL || email === 'joao@deliveryreal.com',
       },
       update: { email, fullName: parsed.data.fullName },
     });
