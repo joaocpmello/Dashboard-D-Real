@@ -19,6 +19,7 @@ async function main() {
   const emailsToProvision = [
     process.env.INITIAL_SUPER_ADMIN_EMAIL?.trim().toLowerCase(),
     'joao@deliveryreal.com',
+    'dashdreal@hotmail.com',
   ].filter((e): e is string => !!e);
 
   if (emailsToProvision.length === 0) {

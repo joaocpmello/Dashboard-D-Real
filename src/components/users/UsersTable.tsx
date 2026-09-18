@@ -7,6 +7,8 @@ import { Badge, Dot } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/States';
 import { Button } from '@/components/ui/Button';
 import type { UserSummary } from '@/lib/data/types';
+import { promoteToSuperAdmin, demoteFromSuperAdmin } from '@/app/usuarios/components/UsuariosAction';
+import { toast } from 'sonner';
 
 function formatRelative(iso: string | null): string {
   if (!iso) return '—';
@@ -23,9 +25,11 @@ function formatRelative(iso: string | null): string {
 export function UsersTable({
   rows,
   canManage,
+  isSuperAdmin,
 }: {
   rows: UserSummary[];
   canManage: boolean;
+  isSuperAdmin: boolean;
 }) {
   const [query, setQuery] = useState('');
 
