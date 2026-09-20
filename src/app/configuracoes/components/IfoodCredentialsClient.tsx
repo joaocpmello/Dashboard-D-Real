@@ -126,6 +126,11 @@ export function IfoodCredentialsClient({
         </div>
       </div>
 
+      <div className="p-3 rounded-lg bg-blue-50 border border-blue-100 text-blue-700 text-xs leading-relaxed">
+        <p className="font-medium mb-1">💡 Nota sobre as credenciais:</p>
+        <p>Insira o Client ID e Client Secret do seu aplicativo cadastrado no Portal do Desenvolvedor iFood. Ao sincronizar, o sistema importará automaticamente todas as lojas vinculadas a este aplicativo.</p>
+      </div>
+
       <div className="flex items-center gap-2">
         <Button
           variant="primary"

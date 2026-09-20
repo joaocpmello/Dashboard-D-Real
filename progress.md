@@ -32,6 +32,7 @@
 - [x] Restore sidebar visibility in `/lojas` by wrapping the page in `AppShell`.
 - [x] Refactor `/lojas` HUD with a clean, responsive design and an empty state handler.
 - [x] Implement proactive credential verification in the sync route to prevent 500 errors.
+- [x] Clarify conceptual UI texts for iFood App credentials vs individual stores.
 - [x] Successfully pass `npm run typecheck`.
 - [x] Successfully pass `npm run build`.
 

@@ -42,7 +42,7 @@ export default async function LojasPage() {
           <div className="space-y-1">
             <h1 className="text-2xl font-bold tracking-tight text-ink-900">Lojas da Organização</h1>
             <p className="text-muted-foreground text-sm">
-              Gerenciando lojas de {ctx.org?.name || 'Organização'}
+              Organização Ativa: <span className="font-semibold text-ink-700">{ctx.org?.name || 'Nenhuma organização ativa'}</span>
             </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">

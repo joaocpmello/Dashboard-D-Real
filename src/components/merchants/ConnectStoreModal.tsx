@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Input, Label } from '@/components/ui/Input';
-import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -15,9 +14,12 @@ interface ConnectStoreModalProps {
 export function ConnectStoreModal({ isOpen, onClose }: ConnectStoreModalProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [clientId, setClientId] = useState('');
   const [clientSecret, setClientSecret] = useState('');
   const [environment, setEnvironment] = useState<'sandbox' | 'production'>('sandbox');
+
+  if (!isOpen) return null;
 
   async function handleSave() {
     if (!clientId || !clientSecret) {
@@ -26,8 +28,8 @@ export function ConnectStoreModal({ isOpen, onClose }: ConnectStoreModalProps) {
     }
 
     setLoading(true);
+    setError(null);
     try {
-      // 1. Save credentials first
       const resCreds = await fetch('/api/merchants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -37,19 +39,29 @@ export function ConnectStoreModal({ isOpen, onClose }: ConnectStoreModalProps) {
           clientSecret,
         }),
       });
-      if (!resCreds.ok) throw new Error('Erro ao salvar credenciais');
 
-      // 2. Immediately trigger sync
+      if (!resCreds.ok) {
+        const data = await resCreds.json().catch(() => ({}));
+        throw new Error(data.error || 'Erro ao salvar credenciais');
+      }
+
       const resSync = await fetch('/api/merchants/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ environment }),
       });
-      if (!resSync.ok) throw new Error('Erro ao sincronizar lojas');
 
-      toast.success('Lojas conectadas e sincronizadas com sucesso!');
+      if (!resSync.ok) {
+        const data = await resSync.json().catch(() => ({}));
+        throw new Error(data.error || 'Erro ao sincronizar lojas');
+      }
+
+      toast.success('Loja conectada com sucesso!');
       onClose();
+      router.refresh();
+      window.location.reload();
     } catch (err: any) {
+      setError(err.message);
       toast.error(err.message);
     } finally {
       setLoading(false);
@@ -57,41 +69,70 @@ export function ConnectStoreModal({ isOpen, onClose }: ConnectStoreModalProps) {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Conectar Nova Loja iFood">
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>Ambiente</Label>
-          <select
-            className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
-            value={environment}
-            onChange={(e) => setEnvironment(e.target.value as any)}
-          >
-            <option value="sandbox">Sandbox (Testes)</option>
-            <option value="production">Produção</option>
-          </select>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative border border-slate-200">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-ink-400 hover:text-ink-900 transition-colors"
+          aria-label="Fechar"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+
+        <h2 className="text-xl font-bold text-ink-900 mb-2">Credenciais do Aplicativo iFood</h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          Insira o Client ID e Client Secret do seu aplicativo cadastrado no Portal do Desenvolvedor iFood. Ao sincronizar, o sistema importará automaticamente todas as lojas vinculadas a este aplicativo.
+        </p>
+
+        {error && (
+          <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm border border-red-200 mb-4 flex gap-2 items-start">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 mt-0.5 flex-shrink-0">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Ambiente</Label>
+            <select
+              className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+              value={environment}
+              onChange={(e) => setEnvironment(e.target.value as any)}
+            >
+              <option value="sandbox">Sandbox (Testes)</option>
+              <option value="production">Produção</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="clientId">Client ID</Label>
+            <Input
+              id="clientId"
+              type="text"
+              className="font-mono"
+              value={clientId}
+              onChange={(e) => setClientId(e.target.value)}
+              placeholder="Ex: aaaa-bbbb-cccc..."
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="clientSecret">Client Secret</Label>
+            <Input
+              id="clientSecret"
+              type="password"
+              value={clientSecret}
+              onChange={(e) => setClientSecret(e.target.value)}
+              placeholder="••••••••••••"
+            />
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="clientId">Client ID</Label>
-          <Input
-            id="clientId"
-            type="text"
-            className="font-mono"
-            value={clientId}
-            onChange={(e) => setClientId(e.target.value)}
-            placeholder="Ex: aaaa-bbbb-cccc..."
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="clientSecret">Client Secret</Label>
-          <Input
-            id="clientSecret"
-            type="password"
-            value={clientSecret}
-            onChange={(e) => setClientSecret(e.target.value)}
-            placeholder="••••••••••••"
-          />
-        </div>
-        <div className="flex justify-end gap-3 mt-6">
+
+        <div className="flex justify-end gap-3 mt-8">
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
@@ -104,6 +145,14 @@ export function ConnectStoreModal({ isOpen, onClose }: ConnectStoreModalProps) {
           </Button>
         </div>
       </div>
-    </Modal>
+    </div>
+  );
+}
+
+function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
+  return (
+    <label htmlFor={htmlFor} className="block text-sm font-medium text-ink-700 mb-1">
+      {children}
+    </label>
   );
 }
