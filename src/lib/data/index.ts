@@ -21,13 +21,40 @@ export const dataMode = {
 
 // ---- Merchants --------------------------------------------------------------
 
-export async function listMerchants(_organizationId: string | null): Promise<MerchantSummary[]> {
+export async function listMerchants(organizationId: string | null): Promise<MerchantSummary[]> {
+  let resolvedOrgId = organizationId;
+
+  if (!resolvedOrgId) {
+    const { prisma } = await import('@/lib/db/prisma');
+    const firstOrg = await prisma.organization.findFirst({
+      orderBy: { createdAt: 'asc' },
+    });
+    resolvedOrgId = firstOrg?.id ?? null;
+  }
+
   if (isDemoMode()) {
+    const { merchantRepo } = await import('@/repositories/merchants');
+    if (resolvedOrgId) {
+      const realRows = await merchantRepo.list(resolvedOrgId);
+      if (realRows.length > 0) {
+        return realRows.map((m) => ({
+          id: m.id,
+          organizationId: m.organizationId,
+          ifoodMerchantId: m.ifoodMerchantId,
+          name: m.name ?? m.ifoodMerchantId,
+          corporateName: m.corporateName,
+          city: null,
+          status: m.status,
+          lastSyncedAt: m.lastSyncedAt ? m.lastSyncedAt.toISOString() : null,
+        }));
+      }
+    }
     return DEMO_MERCHANTS;
   }
+
+  if (!resolvedOrgId) return [];
   const { merchantRepo } = await import('@/repositories/merchants');
-  if (!_organizationId) return [];
-  const rows = await merchantRepo.list(_organizationId);
+  const rows = await merchantRepo.list(resolvedOrgId);
   return rows.map((m) => ({
     id: m.id,
     organizationId: m.organizationId,

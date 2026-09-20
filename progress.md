@@ -12,9 +12,9 @@
 - [x] Create `IfoodCredentialsClient.tsx` for updating Sandbox/Production credentials.
 - [x] Integrate credentials management into `/configuracoes`.
 - [x] Create `LojasActionsClient.tsx` for "Sync now" and "Connect New Store" triggers.
-- [x] Implement `ConnectStoreModal.tsx` for adding new iFood credentials and immediate sync.
-- [x] Integrate actions into `/lojas` page.
-- [x] Enhance error handling in `IfoodCredentialsClient.tsx` to display specific API error messages.
+- [x] Implement `ConnectStoreModal.tsx` with centered responsive layout and sequential API logic (save $\rightarrow$ sync).
+- [x] Integrate actions into `/lojas` page with responsive header and optimized layout.
+- [x] Enhance error handling in `IfoodCredentialsClient.tsx` and `ConnectStoreModal.tsx` to display specific API error messages.
 
 ### 3. Organization Management
 - [x] Implement "Create Organization" modal and form in `OrganizationsClient.tsx`.
@@ -26,9 +26,10 @@
 - [x] Fix duplicate `dynamic` export in `src/app/configuracoes/page.tsx`.
 - [x] Fix `DYNAMIC_SERVER_USAGE` errors by marking API routes as `force-dynamic`.
 - [x] Add explicit logging for missing `CREDENTIAL_ENCRYPTION_KEY` in `src/lib/crypto/secrets.ts`.
+- [x] Implement dynamic organization resolution in `listMerchants` to allow Super Admins to view stores without an active session org.
 - [x] Successfully pass `npm run typecheck`.
 - [x] Successfully pass `npm run build`.
 
 ## Current Status
-The application is now fully type-checked, builds successfully, and the primary provisioning/connection flows are implemented and connected to the backend APIs. Super Admins can now start from zero and have an organization automatically created upon their first credential save.
+The application is now fully type-checked, builds successfully, and the primary provisioning/connection flows are implemented and connected to the backend APIs. Super Admins can now start from zero, have an organization automatically created, and view their synchronized stores on the `/lojas` page with a fully responsive interface.
 EOF

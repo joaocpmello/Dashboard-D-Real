@@ -23,19 +23,17 @@ export default async function LojasPage() {
   const problems = merchants.filter((m) => (m.status ?? '').toUpperCase().includes('INTEGRATION')).length;
 
   return (
-    <AppShell
-      title="Lojas"
-      subtitle="Lojas vinculadas ao iFood"
-      orgName={ctx.org?.name}
-      isDemo={ctx.isDemo}
-      user={{
-        email: ctx.user.email,
-        fullName: ctx.user.fullName,
-        role: ctx.user.role,
-        isSuperAdmin: ctx.user.isSuperAdmin,
-      }}
-      actions={<LojasActionsClient />}
-    >
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-ink-900">Lojas</h1>
+          <p className="text-muted-foreground text-sm">Lojas vinculadas ao iFood</p>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <LojasActionsClient />
+        </div>
+      </header>
+
       <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard
           label="Total"
@@ -80,7 +78,7 @@ export default async function LojasPage() {
           <MerchantFilters rows={merchants} />
         </CardBody>
       </Card>
-    </AppShell>
+    </div>
   );
 }
 
