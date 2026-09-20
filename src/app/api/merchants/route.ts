@@ -21,7 +21,7 @@ export async function GET() {
 
 // Configurar/atualizar credenciais iFood — só ADMIN da Organization.
 const credsSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.string().uuid().optional(),
   environment: z.enum(['sandbox', 'production']),
   clientId: z.string().min(1).max(200),
   clientSecret: z.string().min(1).max(400),
@@ -31,6 +31,9 @@ export async function POST(req: NextRequest) {
   try {
     const session = await RBACService.requireRole('ADMIN');
     let organizationId = session.organizationId;
+
+    const body = await req.json();
+    const input = credsSchema.parse(body);
 
     if (!organizationId) {
       const { organizationRepo } = await import('@/repositories/organizations');
@@ -50,10 +53,12 @@ export async function POST(req: NextRequest) {
       organizationId = newOrg.id;
     }
 
-    const input = credsSchema.parse(await req.json());
-
-    // Validate organizationId if provided in input; otherwise use the auto-created/session one
+    // Order of priority: 1. Body input, 2. Session/Auto-created orgId
     const targetOrgId = input.organizationId || organizationId;
+
+    if (!targetOrgId) {
+      return Response.json({ error: 'no_organization' }, { status: 400 });
+    }
 
     if (targetOrgId !== organizationId && !session.isSuperAdmin) {
       return Response.json({ error: 'forbidden' }, { status: 403 });

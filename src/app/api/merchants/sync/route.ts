@@ -16,31 +16,40 @@ export async function POST(req: NextRequest) {
     const session = await RBACService.requireRole('ADMIN');
     let organizationId = session.organizationId;
 
-    if (!organizationId) {
-      const firstOrg = await prisma.organization.findFirst({
-        orderBy: { createdAt: 'asc' },
-      });
-      if (!firstOrg) {
-        return NextResponse.json({
-          success: false,
-          error: 'Nenhuma organização encontrada. Crie uma organização primeiro.'
-        }, { status: 400 });
-      }
-      organizationId = firstOrg.id;
-    }
-
     const body = await req.json();
     const input = bodySchema.parse(body);
-    const targetOrgId = input.organizationId || organizationId;
 
-    if (targetOrgId !== organizationId && !session.isSuperAdmin) {
+    // Order of priority: 1. Body input, 2. Session orgId
+    const requestedOrgId = input.organizationId || organizationId;
+
+    if (!requestedOrgId) {
+      // Fallback: search first organization linked to user
+      const { prisma } = await import('@/lib/db/prisma');
+      const firstOrgUser = await prisma.organizationUser.findFirst({
+        where: { userId: session.id },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      if (!firstOrgUser) {
+        return NextResponse.json({
+          success: false,
+          error: 'Nenhuma organização associada a este usuário. Crie uma organização primeiro.'
+        }, { status: 400 });
+      }
+      organizationId = firstOrgUser.organizationId;
+    } else {
+      organizationId = requestedOrgId;
+    }
+
+    // Defense: only allow syncing the assigned organization unless Super Admin
+    if (organizationId !== session.organizationId && !session.isSuperAdmin) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
 
     // VERIFICAÇÃO DE CREDENCIAIS: Check if credentials exist for the resolved organization
     const { ifoodCredentialRepo } = await import('@/repositories/ifood-credentials');
     const env = input.environment || (process.env.IFOOD_ENVIRONMENT === 'production' ? 'production' : 'sandbox');
-    const creds = await ifoodCredentialRepo.publicView(targetOrgId, env);
+    const creds = await ifoodCredentialRepo.publicView(organizationId, env);
 
     if (!creds) {
       return NextResponse.json({
@@ -51,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     const service = new IfoodMerchantService();
     const result = await service.listAndSync({
-      organizationId: targetOrgId,
+      organizationId,
       actorUserId: session.id,
       environment: input.environment,
     });
