@@ -77,8 +77,8 @@ export class IfoodAuthService {
       if (err instanceof IfoodAuthError) throw err;
 
       // Se o erro for de descriptografia (AES), lançamos mensagem amigável
-      if (err instanceof Error && (err.message.includes('CREDENTIAL_ENCRYPTION_KEY') || err.message.includes('authTag'))) {
-        throw new Error('Não foi possível descriptografar o Client Secret salvo. Por favor, acesse a aba Configurações e salve o Client ID e Client Secret novamente para recriar a chave de criptografia.');
+      if (err instanceof Error && (err.message.includes('CREDENTIAL_ENCRYPTION_KEY') || err.message.includes('authTag') || err.message.includes('Ciphertext verification failed'))) {
+        throw new Error('As credenciais salvas no banco não puderam ser descriptografadas com a chave atual do servidor. Por favor, re-insira o Client ID e Client Secret no modal de conexão.');
       }
 
       throw new IfoodAuthError('Falha ao obter token do iFood');
