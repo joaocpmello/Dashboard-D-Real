@@ -30,19 +30,38 @@ const credsSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await RBACService.requireRole('ADMIN');
-    const organizationId = session.organizationId;
+    let organizationId = session.organizationId;
+
     if (!organizationId) {
-      return Response.json({ error: 'no_organization' }, { status: 400 });
+      const { organizationRepo } = await import('@/repositories/organizations');
+
+      // Auto-create first organization for the user
+      const newOrg = await organizationRepo.create({
+        name: 'Marmitaria Principal',
+        document: '00.000.000/0001-00',
+      });
+
+      // Link user to this organization as ADMIN
+      await organizationRepo.addMember({
+        organizationId: newOrg.id,
+        userId: session.id,
+        role: 'ADMIN',
+      });
+      organizationId = newOrg.id;
     }
+
     const input = credsSchema.parse(await req.json());
 
-    if (input.organizationId !== organizationId && !session.isSuperAdmin) {
+    // Validate organizationId if provided in input; otherwise use the auto-created/session one
+    const targetOrgId = input.organizationId || organizationId;
+
+    if (targetOrgId !== organizationId && !session.isSuperAdmin) {
       return Response.json({ error: 'forbidden' }, { status: 403 });
     }
 
     const { ifoodCredentialRepo } = await import('@/repositories/ifood-credentials');
     await ifoodCredentialRepo.upsert({
-      organizationId: input.organizationId,
+      organizationId: targetOrgId,
       environment: input.environment,
       clientId: input.clientId,
       clientSecret: input.clientSecret,
@@ -50,7 +69,7 @@ export async function POST(req: NextRequest) {
 
     const { auditRepo } = await import('@/repositories/audit');
     await auditRepo.log({
-      organizationId: input.organizationId,
+      organizationId: targetOrgId,
       userId: session.id,
       action: 'ifood.credentials.upsert',
       entity: 'IfoodCredential',
@@ -58,7 +77,11 @@ export async function POST(req: NextRequest) {
     });
 
     return Response.json({ ok: true });
-  } catch (err) {
-    return toErrorResponse(err);
+  } catch (err: any) {
+    console.error('[MERCHANTS POST ERROR]:', err);
+    return Response.json(
+      { error: err.message || 'Ocorreu um erro interno ao salvar credenciais' },
+      { status: 500 }
+    );
   }
 }

@@ -41,7 +41,10 @@ export function IfoodCredentialsClient({
             clientSecret: secret,
           }),
         });
-        if (!res.ok) throw new Error(`Erro ao salvar credenciais de ${env}`);
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.error || `Erro ao salvar credenciais de ${env}`);
+        }
       };
 
       await Promise.all([

@@ -23,10 +23,12 @@ const KEY_VERSION = 1;
 function loadKey(): Buffer {
   const raw = process.env.CREDENTIAL_ENCRYPTION_KEY;
   if (!raw) {
+    console.error('[CRYPTO ERROR]: CREDENTIAL_ENCRYPTION_KEY is missing from environment variables');
     throw new Error('CREDENTIAL_ENCRYPTION_KEY não definida');
   }
   const key = Buffer.from(raw, 'base64');
   if (key.length !== 32) {
+    console.error('[CRYPTO ERROR]: CREDENTIAL_ENCRYPTION_KEY must be 32 bytes (base64)');
     throw new Error('CREDENTIAL_ENCRYPTION_KEY deve ter 32 bytes (base64)');
   }
   return key;
