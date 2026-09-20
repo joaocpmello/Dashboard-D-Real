@@ -41,4 +41,6 @@
 
 ## Current Status
 The application is now fully type-checked, builds successfully, and the primary provisioning/connection flows are implemented and connected to the backend APIs. Super Admins can now start from zero, have an organization automatically created, and view their synchronized stores on the `/lojas` page with a fully responsive interface and working sidebar.
+
+- [x] Refactor `src/middleware.ts` to be Edge Runtime safe, removing incompatible Node.js imports (Prisma, crypto) and implementing ultra-defensive variable checks to prevent `MIDDLEWARE_INVOCATION_FAILED` on Vercel.
 EOF
