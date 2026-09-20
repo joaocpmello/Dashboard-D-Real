@@ -61,8 +61,13 @@ async function main() {
     }
 
     // 3) Espelhar no nosso banco e promover.
+    // Como o e-mail é único e o ID pode ter mudado, tentamos primeiro encontrar por e-mail para evitar erro de Unique Constraint.
+    const existingUser = await prisma.user.findUnique({
+      where: { email: authUser.email! },
+    });
+
     const user = await prisma.user.upsert({
-      where: { id: authUser.id },
+      where: { id: existingUser?.id ?? authUser.id },
       create: {
         id: authUser.id,
         email: authUser.email!,
@@ -70,6 +75,7 @@ async function main() {
         isSuperAdmin: true,
       },
       update: {
+        id: authUser.id, // Sincroniza o ID do Auth com o DB caso tenham divergido
         isSuperAdmin: true,
         email: authUser.email!,
       },

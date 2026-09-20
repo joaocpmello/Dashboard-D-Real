@@ -53,7 +53,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
       dbUser = existingByEmail;
     } else {
       // Fallback gracioso: Cria o registro em public.users se não existir nem por ID nem por E-mail.
-      const isSuperAdmin = process.env.INITIAL_SUPER_ADMIN_EMAIL === user.email || user.email === 'joao@deliveryreal.com';
+      const isSuperAdmin = user.email === process.env.INITIAL_SUPER_ADMIN_EMAIL;
       const created = await prisma.user.create({
         data: {
           id: user.id,
