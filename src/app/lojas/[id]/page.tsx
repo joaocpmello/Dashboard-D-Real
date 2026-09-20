@@ -10,6 +10,10 @@ import { getPageContext } from '@/lib/auth/page-context';
 import { getMerchant, listMerchants } from '@/lib/data';
 import { requireSession } from '@/lib/auth/session';
 import { ReviewsSection } from '@/components/reviews/ReviewsSection';
+import { orderRepo } from '@/repositories/orders';
+import { categoryRepo } from '@/repositories/categories';
+import { productRepo } from '@/repositories/products';
+import { productPriceRepo } from '@/repositories/product-prices';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +54,34 @@ export default async function MerchantDetailPage({
 
   const allMerchants = await listMerchants(ctx.user.organizationId);
   const total = allMerchants.length;
+
+  // Fetch Store Data
+  const recentOrders = await orderRepo.findMany({
+    organizationId: ctx.user.organizationId || '',
+    merchantId: merchant.id,
+    take: 5,
+  });
+
+  const categories = await categoryRepo.findMany({
+    organizationId: ctx.user.organizationId || '',
+    merchantId: merchant.id,
+  });
+
+  const products = await productRepo.findMany({
+    organizationId: ctx.user.organizationId || '',
+    merchantId: merchant.id,
+  });
+
+  // Get latest prices for a few top products to display in the summary
+  const topProducts = await Promise.all(
+    products.slice(0, 4).map(async (p) => {
+      const price = await productPriceRepo.findLatest({
+        organizationId: ctx.user.organizationId || '',
+        productId: p.id,
+      });
+      return { ...p, currentPrice: price?.price ?? 0 };
+    })
+  );
 
   return (
     <AppShell
@@ -114,7 +146,6 @@ export default async function MerchantDetailPage({
           </Button>
         </div>
       </div>
-
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-4">
           <Card>
@@ -159,33 +190,112 @@ export default async function MerchantDetailPage({
 
           <Card>
             <CardHeader>
-              <div>
-                <CardTitle>Pedidos</CardTitle>
-                <CardDescription>Recebidos, em andamento e concluídos hoje</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Pedidos Recentes</CardTitle>
+                  <CardDescription>Últimos pedidos recebidos via iFood</CardDescription>
+                </div>
+                <Link
+                  href="/pedidos"
+                  className="text-xs font-medium text-brand-600 hover:text-brand-700 hover:underline"
+                >
+                  Ver Todos os Pedidos →
+                </Link>
               </div>
-              <Badge tone="warning">Em breve</Badge>
             </CardHeader>
             <CardBody>
-              <EmptyState
-                title="Módulo de pedidos em desenvolvimento"
-                description="A próxima grande entrega: receber pedidos iFood em tempo real, gerenciar status, cancelamentos e histórico completo por loja."
-              />
+              {recentOrders.length === 0 ? (
+                <EmptyState
+                  title="Nenhum pedido recente"
+                  description="Os pedidos sincronizados aparecerão aqui."
+                />
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="border-b border-ink-100 text-xs uppercase text-ink-400">
+                      <tr>
+                        <th className="pb-2 font-medium">Pedido</th>
+                        <th className="pb-2 font-medium">Cliente</th>
+                        <th className="pb-2 font-medium">Total</th>
+                        <th className="pb-2 font-medium">Status</th>
+                        <th className="pb-2 font-medium">Hora</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-ink-50">
+                      {recentOrders.map((order) => (
+                        <tr key={order.id} className="group hover:bg-ink-50/50">
+                          <td className="py-3 font-mono text-xs text-ink-600">
+                            {order.ifoodOrderId.slice(-8)}
+                          </td>
+                          <td className="py-3 font-medium text-ink-900">
+                            {order.customerName ?? 'Cliente anônimo'}
+                          </td>
+                          <td className="py-3 text-ink-700">
+                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(order.total))}
+                          </td>
+                          <td className="py-3">
+                            <Badge tone={order.status === 'DELIVERED' ? 'success' : 'neutral'}>
+                              {order.status}
+                            </Badge>
+                          </td>
+                          <td className="py-3 text-xs text-ink-500">
+                            {formatDateTime(order.createdAt ? order.createdAt.toISOString() : null)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </CardBody>
           </Card>
 
           <Card>
             <CardHeader>
-              <div>
-                <CardTitle>Cardápio</CardTitle>
-                <CardDescription>Itens, preços, disponibilidade e categorias</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Resumo do Cardápio</CardTitle>
+                  <CardDescription>Itens sincronizados com a loja</CardDescription>
+                </div>
+                <Link
+                  href="/cardapio"
+                  className="text-xs font-medium text-brand-600 hover:text-brand-700 hover:underline"
+                >
+                  Gerenciar Cardápio →
+                </Link>
               </div>
-              <Badge tone="warning">Em breve</Badge>
             </CardHeader>
             <CardBody>
-              <EmptyState
-                title="Cardápio integrado em breve"
-                description="Sincronização com o cardápio do iFood e gestão de itens, categorias, fotos e preços."
-              />
+              <div className="mb-6 grid grid-cols-2 gap-4">
+                <div className="rounded-xl bg-ink-50 p-4 text-center">
+                  <p className="text-2xl font-bold text-ink-900">{categories.length}</p>
+                  <p className="text-xs text-ink-500">Categorias</p>
+                </div>
+                <div className="rounded-xl bg-ink-50 p-4 text-center">
+                  <p className="text-2xl font-bold text-ink-900">{products.length}</p>
+                  <p className="text-xs text-ink-500">Produtos</p>
+                </div>
+              </div>
+              {products.length === 0 ? (
+                <EmptyState
+                  title="Cardápio vazio"
+                  description="Sincronize a loja para importar os itens do iFood."
+                />
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {topProducts.map((product) => (
+                    <div key={product.id} className="flex items-center gap-3 rounded-lg border border-ink-100 p-3 transition-colors hover:bg-ink-50/50">
+                      <div className="h-10 w-10 shrink-0 rounded-md bg-ink-100" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-ink-900">{product.name}</p>
+                        <p className="text-xs font-semibold text-brand-600">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(product.currentPrice))}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardBody>
           </Card>
 
@@ -266,9 +376,9 @@ function SyncIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
       <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
-      <path d="M21 3v5h-5" />
-      <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
       <path d="M3 21v-5h5" />
+      <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+      <path d="M21 3v5h-5" />
     </svg>
   );
 }
