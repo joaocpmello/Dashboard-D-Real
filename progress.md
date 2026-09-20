@@ -27,9 +27,12 @@
 - [x] Fix `DYNAMIC_SERVER_USAGE` errors by marking API routes as `force-dynamic`.
 - [x] Add explicit logging for missing `CREDENTIAL_ENCRYPTION_KEY` in `src/lib/crypto/secrets.ts`.
 - [x] Implement dynamic organization resolution in `listMerchants` to allow Super Admins to view stores without an active session org.
+- [x] Fix corrupted SVG paths in `Sidebar.tsx` to resolve console errors.
+- [x] Implement robust error handling and organization fallback in `/api/merchants/sync`.
+- [x] Restore sidebar visibility in `/lojas` by wrapping the page in `AppShell`.
 - [x] Successfully pass `npm run typecheck`.
 - [x] Successfully pass `npm run build`.
 
 ## Current Status
-The application is now fully type-checked, builds successfully, and the primary provisioning/connection flows are implemented and connected to the backend APIs. Super Admins can now start from zero, have an organization automatically created, and view their synchronized stores on the `/lojas` page with a fully responsive interface.
+The application is now fully type-checked, builds successfully, and the primary provisioning/connection flows are implemented and connected to the backend APIs. Super Admins can now start from zero, have an organization automatically created, and view their synchronized stores on the `/lojas` page with a fully responsive interface and working sidebar.
 EOF

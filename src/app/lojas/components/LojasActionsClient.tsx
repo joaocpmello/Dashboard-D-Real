@@ -19,11 +19,15 @@ export function LojasActionsClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}), // API handles org from session
       });
-      if (!res.ok) throw new Error('Erro ao sincronizar lojas');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Erro ao sincronizar lojas');
+      }
 
       toast.success('Sincronização concluída!');
       router.refresh();
     } catch (err: any) {
+      alert(err.message);
       toast.error(err.message);
     } finally {
       setSyncing(false);
