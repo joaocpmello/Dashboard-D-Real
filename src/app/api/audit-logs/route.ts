@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { RBACService } from '@/lib/auth/rbac';
 import { auditRepo } from '@/repositories/audit';

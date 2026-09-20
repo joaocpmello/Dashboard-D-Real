@@ -11,6 +11,9 @@ import {
   THead,
   TR
 } from '@/components/ui/Table';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { Input, Label } from '@/components/ui/Input';
 import { toast } from 'sonner';
 
 interface Organization {
@@ -29,6 +32,9 @@ export default function OrganizationsClient() {
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newOrg, setNewOrg] = useState({ name: '', document: '' });
+  const [creatingLoading, setCreatingLoading] = useState(false);
 
   async function fetchOrgs() {
     setLoading(true);
@@ -47,6 +53,27 @@ export default function OrganizationsClient() {
   useEffect(() => {
     fetchOrgs();
   }, []);
+
+  async function handleCreateOrg() {
+    setCreatingLoading(true);
+    try {
+      const res = await fetch('/api/organizations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newOrg),
+      });
+      if (!res.ok) throw new Error('Erro ao criar organização');
+
+      toast.success('Organização criada com sucesso!');
+      setNewOrg({ name: '', document: '' });
+      setIsCreateOpen(false);
+      await fetchOrgs();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setCreatingLoading(false);
+    }
+  }
 
   async function updatePlan(orgId: string, plan: 'STARTER' | 'PRO' | 'ENTERPRISE') {
     setUpdatingId(orgId);
@@ -71,6 +98,16 @@ export default function OrganizationsClient() {
 
   return (
     <>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-lg font-semibold text-ink-900">Gestão de Clientes</h2>
+        <Button
+          variant="primary"
+          onClick={() => setIsCreateOpen(true)}
+        >
+          + Nova Organização
+        </Button>
+      </div>
+
       <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardBody className="flex flex-col items-center justify-center text-center py-6">
@@ -151,6 +188,47 @@ export default function OrganizationsClient() {
           </div>
         </CardBody>
       </Card>
+
+      <Modal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        title="Criar Nova Organização"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="org-name">Nome da Organização</Label>
+            <Input
+              id="org-name"
+              type="text"
+              value={newOrg.name}
+              onChange={(e) => setNewOrg({ ...newOrg, name: e.target.value })}
+              placeholder="Ex: Marmitaria do João"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="org-doc">Documento (CNPJ)</Label>
+            <Input
+              id="org-doc"
+              type="text"
+              value={newOrg.document}
+              onChange={(e) => setNewOrg({ ...newOrg, document: e.target.value })}
+              placeholder="00.000.000/0001-00"
+            />
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button variant="ghost" onClick={() => setIsCreateOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateOrg}
+              disabled={creatingLoading}
+            >
+              {creatingLoading ? 'Criando...' : 'Criar Organização'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }

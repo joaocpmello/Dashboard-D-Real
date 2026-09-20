@@ -6,6 +6,7 @@ import { Input, Label } from '@/components/ui/Input';
 import { IntegrationStatus } from '@/components/dashboard/IntegrationStatus';
 import { getPageContext } from '@/lib/auth/page-context';
 import { requireSession } from '@/lib/auth/session';
+import { IfoodCredentialsClient } from './components/IfoodCredentialsClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -124,52 +125,18 @@ export default async function ConfiguracoesPage() {
               )}
             </CardHeader>
             <CardBody>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="client-id">Client ID · Sandbox</Label>
-                  <Input
-                    id="client-id"
-                    type="text"
-                    value="••••••••-••••-••••-••••-••••••••••••"
-                    readOnly
-                    disabled
-                    className="font-mono"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="client-secret-sb">Client Secret · Sandbox</Label>
-                  <Input
-                    id="client-secret-sb"
-                    type="password"
-                    value="••••••••••••••••••••••••••••"
-                    readOnly
-                    disabled
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="client-id-prod">Client ID · Produção</Label>
-                  <Input
-                    id="client-id-prod"
-                    type="text"
-                    placeholder="Não configurado"
-                    readOnly
-                    disabled
-                    className="font-mono"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="client-secret-prod">Client Secret · Produção</Label>
-                  <Input
-                    id="client-secret-prod"
-                    type="password"
-                    placeholder="Não configurado"
-                    readOnly
-                    disabled
-                  />
-                </div>
-              </div>
+              <IfoodCredentialsClient
+                organizationId={ctx.org?.id ?? ''}
+                canManageCreds={canManageCreds}
+                initialValues={{
+                  clientIdSb: '••••••••-••••-••••-••••-••••••••••••',
+                  clientSecretSb: '••••••••••••••••••••••••••••',
+                  clientIdProd: '',
+                  clientSecretProd: '',
+                }}
+              />
 
-              <div className="mt-4 rounded-lg border border-info-500/30 bg-info-50 px-3 py-2 text-xs text-info-700">
+              <div className="mt-6 rounded-lg border border-info-500/30 bg-info-50 px-3 py-2 text-xs text-info-700">
                 <p className="font-medium">Como funciona a integração</p>
                 <ul className="mt-1 list-inside list-disc space-y-1">
                   <li>O client secret é criptografado com AES-256-GCM antes de persistir.</li>
@@ -177,20 +144,6 @@ export default async function ConfiguracoesPage() {
                   <li>Renovação automática e refresh em 401 com 1 retry.</li>
                   <li>Nenhum secret trafega pelo navegador — apenas pela API interna.</li>
                 </ul>
-              </div>
-
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <Button
-                  variant="primary"
-                  leftIcon={<KeyIcon />}
-                  disabled={!canManageCreds}
-                  title={canManageCreds ? 'Em breve' : 'Requer ADMIN'}
-                >
-                  Atualizar credenciais
-                </Button>
-                <Button variant="ghost" disabled title="Em breve">
-                  Testar conexão
-                </Button>
               </div>
             </CardBody>
           </Card>

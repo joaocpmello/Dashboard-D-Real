@@ -1,0 +1,12 @@
+src/app/api/cron/sync-merchants/route.ts
+src/app/api/cron/sync-orders/route.ts
+src/app/api/audit-logs/route.ts
+src/app/api/catalog/margins/route.ts
+src/app/api/catalog/route.ts
+src/app/api/orders/route.ts
+src/app/api/reviews/route.ts
+src/app/api/reports/sales/route.ts
+src/app/api/promotions/route.ts
+src/app/api/reports/export/route.ts
+src/app/api/security/insights/route.ts
+src/app/api/incidents/route.ts

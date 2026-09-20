@@ -2,10 +2,10 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { MerchantFilters } from '@/components/merchants/MerchantFilters';
-import { Button } from '@/components/ui/Button';
 import { getPageContext } from '@/lib/auth/page-context';
 import { listMerchants } from '@/lib/data';
 import { requireSession } from '@/lib/auth/session';
+import { LojasActionsClient } from './components/LojasActionsClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,11 +34,7 @@ export default async function LojasPage() {
         role: ctx.user.role,
         isSuperAdmin: ctx.user.isSuperAdmin,
       }}
-      actions={
-        <Button leftIcon={<SyncIcon />} variant="primary" disabled>
-          Sincronizar agora
-        </Button>
-      }
+      actions={<LojasActionsClient />}
     >
       <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard
@@ -88,16 +84,6 @@ export default async function LojasPage() {
   );
 }
 
-function SyncIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
-      <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
-      <path d="M21 3v5h-5" />
-      <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-      <path d="M3 21v-5h5" />
-    </svg>
-  );
-}
 function StoreIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
