@@ -6,6 +6,7 @@ import { getPageContext } from '@/lib/auth/page-context';
 import { listMerchants } from '@/lib/data';
 import { requireSession } from '@/lib/auth/session';
 import { LojasActionsClient } from './components/LojasActionsClient';
+import { Badge } from '@/components/ui/Badge';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,7 @@ export default async function LojasPage() {
   const merchants = await listMerchants(ctx.user.organizationId);
   const open = merchants.filter((m) => (m.status ?? '').toUpperCase() === 'OPEN').length;
   const paused = merchants.filter((m) => (m.status ?? '').toUpperCase() === 'PAUSED').length;
-  const problems = merchants.filter((m) => (m.status ?? '').toUpperCase().includes('INTEGRATION')).length;
+  const problems = merchants.filter((m) => (m.status ?? '').toUpperCase().includes('INTEGRATION') || (m.status ?? '').toUpperCase() === 'CLOSED').length;
 
   return (
     <AppShell
@@ -37,50 +38,77 @@ export default async function LojasPage() {
       actions={<LojasActionsClient />}
     >
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight text-ink-900">Lojas da Organização</h1>
+            <p className="text-muted-foreground text-sm">
+              Gerenciando lojas de {ctx.org?.name || 'Organização'}
+            </p>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <LojasActionsClient />
+          </div>
+        </header>
+
         <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard
-            label="Total"
+            label="Total de Lojas"
             value={String(merchants.length)}
-            hint="Vinculadas à organização"
+            hint="Cadastradas no sistema"
             tone="brand"
             icon={<StoreIcon />}
           />
           <StatCard
-            label="Abertas"
+            label="Lojas Abertas"
             value={String(open)}
-            hint="Operando no iFood"
+            hint="Status OPEN"
             tone="success"
             icon={<CheckIcon />}
           />
           <StatCard
-            label="Pausadas"
+            label="Lojas Pausadas"
             value={String(paused)}
-            hint="Temporariamente fora"
+            hint="Status PAUSED"
             tone="warning"
             icon={<PauseIcon />}
           />
           <StatCard
-            label="Com problema"
+            label="Fechadas / Atenção"
             value={String(problems)}
-            hint="Atenção necessária"
+            hint="Status CLOSED/Problem"
             tone="neutral"
             icon={<AlertIcon />}
           />
         </section>
 
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-1">
-              <CardTitle>Todas as lojas</CardTitle>
-              <CardDescription>
-                Pesquise por nome, cidade ou ID iFood e filtre por status operacional.
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardBody>
-            <MerchantFilters rows={merchants} />
-          </CardBody>
-        </Card>
+        {merchants.length === 0 ? (
+          <Card className="border-dashed bg-ink-50/50">
+            <CardBody className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="mb-4 rounded-full bg-ink-100 p-4 text-ink-400">
+                <StoreIcon />
+              </div>
+              <h3 className="text-lg font-semibold text-ink-900">Nenhuma loja encontrada</h3>
+              <p className="mb-6 max-w-xs text-sm text-muted-foreground">
+                Você ainda não conectou suas lojas do iFood. Configure suas credenciais para começar a sincronizar.
+              </p>
+              <LojasActionsClient />
+            </CardBody>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col gap-1">
+                <CardTitle>Todas as lojas</CardTitle>
+                <CardDescription>
+                  Pesquise por nome, cidade ou ID iFood e filtre por status operacional.
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardBody>
+              <MerchantFilters rows={merchants} />
+            </CardBody>
+          </Card>
+        )}
       </div>
     </AppShell>
   );
