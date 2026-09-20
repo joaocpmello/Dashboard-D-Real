@@ -19,15 +19,20 @@ export function LojasActionsClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}), // API handles org from session
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Erro ao sincronizar lojas');
+
+      const data = await res.json().catch(() => ({ error: 'Resposta inválida do servidor (HTTP ' + res.status + ')' }));
+
+      if (!res.ok || !data.success) {
+        const errorMsg = data.error || 'Erro desconhecido (HTTP ' + res.status + ')';
+        alert('⚠️ Erro na Sincronização:\n\n' + errorMsg);
+        return;
       }
 
-      toast.success('Sincronização concluída!');
+      alert('✅ Sincronização concluída com sucesso!');
       router.refresh();
+      window.location.reload();
     } catch (err: any) {
-      alert(err.message);
+      alert('⚠️ Erro crítico na Sincronização:\n\n' + (err.message || 'Erro desconhecido'));
       toast.error(err.message);
     } finally {
       setSyncing(false);

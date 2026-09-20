@@ -37,6 +37,7 @@
 - [x] Successfully pass `npm run build`.
 - [x] Adjust Zod schema for iFood credentials to handle longer Client Secrets and trim whitespace.
 - [x] Complete audit and refactor of the iFood sync flow to eliminate 500 errors with granular error reporting.
+- [x] Implement high-visibility error diagnostics for `/api/merchants/sync` with explicit alerts on the frontend and detailed server logs.
 
 ## Current Status
 The application is now fully type-checked, builds successfully, and the primary provisioning/connection flows are implemented and connected to the backend APIs. Super Admins can now start from zero, have an organization automatically created, and view their synchronized stores on the `/lojas` page with a fully responsive interface and working sidebar.
