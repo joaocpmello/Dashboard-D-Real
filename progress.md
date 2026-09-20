@@ -35,6 +35,7 @@
 - [x] Clarify conceptual UI texts for iFood App credentials vs individual stores.
 - [x] Successfully pass `npm run typecheck`.
 - [x] Successfully pass `npm run build`.
+- [x] Adjust Zod schema for iFood credentials to handle longer Client Secrets and trim whitespace.
 
 ## Current Status
 The application is now fully type-checked, builds successfully, and the primary provisioning/connection flows are implemented and connected to the backend APIs. Super Admins can now start from zero, have an organization automatically created, and view their synchronized stores on the `/lojas` page with a fully responsive interface and working sidebar.

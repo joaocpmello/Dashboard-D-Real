@@ -23,8 +23,8 @@ export async function GET() {
 const credsSchema = z.object({
   organizationId: z.string().uuid().optional(),
   environment: z.enum(['sandbox', 'production']),
-  clientId: z.string().min(1).max(200),
-  clientSecret: z.string().min(1).max(400),
+  clientId: z.string().trim().min(1, 'Client ID é obrigatório').max(1000, 'Client ID muito longo'),
+  clientSecret: z.string().trim().min(1, 'Client Secret é obrigatório').max(2000, 'Client Secret muito longo'),
 });
 
 export async function POST(req: NextRequest) {
