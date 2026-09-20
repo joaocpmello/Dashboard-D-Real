@@ -6,6 +6,7 @@ import { getPageContext } from '@/lib/auth/page-context';
 import { listOrders } from '@/lib/data';
 import { requireSession } from '@/lib/auth/session';
 import { OrderTable } from '@/components/orders/OrderTable';
+import { SyncButton } from '@/components/lojas/SyncButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,9 +38,12 @@ export default async function PedidosPage() {
         isSuperAdmin: ctx.user.isSuperAdmin,
       }}
       actions={
-        <Button variant="primary" disabled>
-          Sincronizar Pedidos
-        </Button>
+        <SyncButton
+          label="Sincronizar Pedidos"
+          endpoint="/api/orders/sync"
+          merchantId="" // This page lists orders for the whole organization
+          organizationId={ctx.user.organizationId || ''}
+        />
       }
     >
       <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -6,6 +6,7 @@ import { getPageContext } from '@/lib/auth/page-context';
 import { requireSession } from '@/lib/auth/session';
 import { listCategories, listProducts } from '@/lib/data';
 import { CatalogManager } from '@/components/catalog/CatalogManager';
+import { SyncButton } from '@/components/lojas/SyncButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,9 +36,12 @@ export default async function CardapioPage() {
         isSuperAdmin: ctx.user.isSuperAdmin,
       }}
       actions={
-        <Button variant="primary" disabled>
-          Sincronizar Catálogo
-        </Button>
+        <SyncButton
+          label="Sincronizar Catálogo"
+          endpoint="/api/catalog/sync"
+          merchantId="" // This page lists catalog for the whole organization
+          organizationId={ctx.user.organizationId || ''}
+        />
       }
     >
       <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">

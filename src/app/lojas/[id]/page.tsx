@@ -14,6 +14,7 @@ import { orderRepo } from '@/repositories/orders';
 import { categoryRepo } from '@/repositories/categories';
 import { productRepo } from '@/repositories/products';
 import { productPriceRepo } from '@/repositories/product-prices';
+import { SyncButton } from '@/components/lojas/SyncButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -138,9 +139,13 @@ export default async function MerchantDetailPage({
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" leftIcon={<SyncIcon />} disabled>
-            Sincronizar
-          </Button>
+          <SyncButton
+            label="Sincronizar"
+            endpoint="/api/merchants/sync" // General sync
+            merchantId={merchant.id}
+            organizationId={ctx.user.organizationId || ''}
+            icon={<SyncIcon />}
+          />
           <Button variant="primary" leftIcon={<KeyIcon />} disabled>
             Atualizar credenciais
           </Button>
@@ -195,12 +200,21 @@ export default async function MerchantDetailPage({
                   <CardTitle>Pedidos Recentes</CardTitle>
                   <CardDescription>Últimos pedidos recebidos via iFood</CardDescription>
                 </div>
-                <Link
-                  href="/pedidos"
-                  className="text-xs font-medium text-brand-600 hover:text-brand-700 hover:underline"
-                >
-                  Ver Todos os Pedidos →
-                </Link>
+                <div className="flex items-center gap-2">
+                  <SyncButton
+                    label="Sincronizar"
+                    endpoint="/api/orders/sync"
+                    merchantId={merchant.id}
+                    organizationId={ctx.user.organizationId || ''}
+                    icon={<SyncIcon />}
+                  />
+                  <Link
+                    href="/pedidos"
+                    className="text-xs font-medium text-brand-600 hover:text-brand-700 hover:underline"
+                  >
+                    Ver Todos os Pedidos →
+                  </Link>
+                </div>
               </div>
             </CardHeader>
             <CardBody>
@@ -257,12 +271,21 @@ export default async function MerchantDetailPage({
                   <CardTitle>Resumo do Cardápio</CardTitle>
                   <CardDescription>Itens sincronizados com a loja</CardDescription>
                 </div>
-                <Link
-                  href="/cardapio"
-                  className="text-xs font-medium text-brand-600 hover:text-brand-700 hover:underline"
-                >
-                  Gerenciar Cardápio →
-                </Link>
+                <div className="flex items-center gap-2">
+                  <SyncButton
+                    label="Sincronizar"
+                    endpoint="/api/catalog/sync"
+                    merchantId={merchant.id}
+                    organizationId={ctx.user.organizationId || ''}
+                    icon={<SyncIcon />}
+                  />
+                  <Link
+                    href="/cardapio"
+                    className="text-xs font-medium text-brand-600 hover:text-brand-700 hover:underline"
+                  >
+                    Gerenciar Cardápio →
+                  </Link>
+                </div>
               </div>
             </CardHeader>
             <CardBody>

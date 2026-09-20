@@ -116,31 +116,42 @@ export class IfoodOrderService {
     const env = resolveEnvironment(input.environment);
     const token = await this.auth.getAccessToken(input.organizationId, env);
 
-    // 1. Fetch recent orders (e.g., last 24h)
-    const remote = await this.client.request<IfoodOrderSummary[]>({
-      path: `/order/v1.0/orders`,
-      query: {
-        merchantId: input.merchantId,
-        size: 100,
-      },
-      bearerToken: token,
-    });
-
     let syncedCount = 0;
-    for (const o of remote) {
-      // We assume the order repository handles idempotency (upsert)
-      await orderRepo.upsertFromIfood({
-        organizationId: input.organizationId,
-        merchantId: input.merchantId,
-        ifoodOrderId: o.id,
-        status: o.status,
-        total: o.totalValue,
-        customerName: o.customer.name,
-        customerPhone: o.customer.phone ?? null,
-        customerAddress: `${o.address.street}, ${o.address.number} - ${o.address.neighborhood}, ${o.address.city}/${o.address.state}`,
-        createdAt: new Date(o.createdAt),
+    let page = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+      const remote = await this.client.request<IfoodOrderSummary[]>({
+        path: `/order/v1.0/orders`,
+        query: {
+          merchantId: input.merchantId,
+          page,
+          size: 100,
+        },
+        bearerToken: token,
       });
-      syncedCount++;
+
+      if (!remote || remote.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      for (const o of remote) {
+        await orderRepo.upsertFromIfood({
+          organizationId: input.organizationId,
+          merchantId: input.merchantId,
+          ifoodOrderId: o.id,
+          status: o.status,
+          total: o.totalValue,
+          customerName: o.customer.name,
+          customerPhone: o.customer.phone ?? null,
+          customerAddress: `${o.address.street}, ${o.address.number} - ${o.address.neighborhood}, ${o.address.city}/${o.address.state}`,
+          createdAt: new Date(o.createdAt),
+        });
+        syncedCount++;
+      }
+      page++;
+      if (remote.length < 100) hasMore = false;
     }
 
     await auditRepo.log({

@@ -24,6 +24,25 @@ export const productRepo = {
     });
   },
 
+  async findIdByIfoodId(input: {
+    organizationId: string;
+    ifoodProductId: string;
+  }): Promise<string | null> {
+    if (!isUuid(input.organizationId)) return null;
+
+    return withTenantContext(input.organizationId, async (tx) => {
+      const p = await tx.product.findUnique({
+        where: {
+          organizationId_ifoodProductId: {
+            organizationId: input.organizationId,
+            ifoodProductId: input.ifoodProductId,
+          },
+        },
+      });
+      return p?.id ?? null;
+    });
+  },
+
   async upsertFromIfood(input: {
     organizationId: string;
     merchantId: string;

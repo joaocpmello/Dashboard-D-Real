@@ -102,6 +102,19 @@ export class IfoodCatalogService {
       body: { price: input.newPrice },
       bearerToken: token,
     });
+
+    // Record price change in history
+    const productId = await productRepo.findIdByIfoodId({
+      organizationId: input.organizationId,
+      ifoodProductId: input.ifoodProductId,
+    });
+    if (productId) {
+      await productPriceRepo.create({
+        organizationId: input.organizationId,
+        productId,
+        price: input.newPrice,
+      });
+    }
   }
 
   async updateAvailability(input: {
@@ -157,6 +170,15 @@ export class IfoodCatalogService {
         description: prod.description ?? null,
         active: prod.active ?? true,
       });
+
+      // Register current price snapshot
+      if (prod.price !== undefined) {
+        await productPriceRepo.create({
+          organizationId: input.organizationId,
+          productId: (await productRepo.findIdByIfoodId({ organizationId: input.organizationId, ifoodProductId: prod.id })) ?? '',
+          price: prod.price,
+        });
+      }
     }
 
     return {

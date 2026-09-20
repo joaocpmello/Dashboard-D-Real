@@ -15,6 +15,7 @@ export interface IfoodProduct {
   name: string;
   description?: string;
   active?: boolean;
+  price?: number;
 }
 
 export interface IfoodPriceUpdate {
