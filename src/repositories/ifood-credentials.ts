@@ -61,6 +61,7 @@ export const ifoodCredentialRepo = {
     environment: IfoodEnvironment;
     clientId: string;
     clientSecret: string;
+    authorizationCode?: string;
   }) {
     if (!isUuid(input.organizationId)) {
       throw new Error('Invalid organizationId format');
@@ -81,11 +82,13 @@ export const ifoodCredentialRepo = {
           clientId: input.clientId,
           clientSecretCipher: enc.cipher,
           clientSecretKeyVersion: enc.keyVersion,
+          authorizationCode: input.authorizationCode,
         },
         update: {
           clientId: input.clientId,
           clientSecretCipher: enc.cipher,
           clientSecretKeyVersion: enc.keyVersion,
+          authorizationCode: input.authorizationCode,
           // ao trocar credenciais, descarta token antigo.
           accessTokenCipher: null,
           accessTokenExpiresAt: null,

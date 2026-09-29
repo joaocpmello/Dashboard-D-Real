@@ -145,6 +145,7 @@ model IfoodCredential {
   clientId                    String           @map("client_id")
   clientSecretCipher          String           @map("client_secret_cipher")
   clientSecretKeyVersion      Int              @default(1) @map("client_secret_key_version")
+  authorizationCode           String?          @map("authorization_code")
 
   accessTokenCipher           String?          @map("access_token_cipher")
   accessTokenExpiresAt        DateTime?        @map("access_token_expires_at")

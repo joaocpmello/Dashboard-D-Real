@@ -1,205 +1,219 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table';
-import { LoadingState, EmptyState } from '@/components/ui/States';
-import { format } from 'date-fns';
+import { Select } from '@/components/ui/Select';
+import { toast } from 'sonner';
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  ShoppingBag,
+  Clock,
+  Star,
+  FileDown
+} from 'lucide-react';
 
-interface Summary {
-  totalRevenue: number;
-  totalOrders: number;
-  avgTicket: number;
-  cancellationRate: number;
+interface StoreReportData {
+  merchant: {
+    id: string;
+    name: string;
+    ifoodMerchantId: string;
+  };
+  report: {
+    financial: {
+      grossRevenue: number;
+      netRevenue: number;
+      commissions: number;
+      totalOrders: number;
+      avgTicket: number;
+    };
+    operational: {
+      cancellationRate: number;
+      avgPrepTime: number;
+      avgDeliveryTime: number;
+      reviewsCount: number;
+      avgRating: number;
+    };
+    period: {
+      startTime: string;
+      endTime: string;
+    };
+  };
 }
 
-interface Breakdown {
-  merchantId: string;
-  name: string;
-  revenue: number;
-  orders: number;
-  avgTicket: number;
-}
-
-export default function ReportsPage() {
-  const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [breakdown, setBreakdown] = useState<Breakdown[]>([]);
-  const [merchants, setMerchants] = useState<{ id: string; name: string }[]>([]);
-
-  const [filters, setFilters] = useState({
-    startTime: format(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
-    endTime: format(new Date(), "yyyy-MM-dd"),
-    selectedMerchants: [] as string[],
+export default function IfoodRestaurantReport() {
+  const [merchantId, setMerchantId] = useState('');
+  const [period, setPeriod] = useState({
+    startTime: new Date(new Date().setHours(0,0,0,0)).toISOString(),
+    endTime: new Date().toISOString(),
   });
-
-  const fetchMerchants = useCallback(async () => {
-    try {
-      const res = await fetch('/api/merchants');
-      const data = await res.json();
-      if (data.ok) {
-        setMerchants(data.data);
-      }
-    } catch (e) {
-      console.error('Error fetching merchants', e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchReportData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.append('startTime', filters.startTime);
-      params.append('endTime', filters.endTime);
-      if (filters.selectedMerchants.length > 0) {
-        params.append('merchantIds', filters.selectedMerchants.join(','));
-      }
-
-      const res = await fetch(`/api/reports/sales?${params.toString()}`);
-      const data = await res.json();
-      if (data.ok) {
-        setSummary(data.data.summary);
-        setBreakdown(data.data.breakdown);
-      }
-    } catch (e) {
-      console.error('Error fetching report', e);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  const [data, setData] = useState<StoreReportData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [merchants, setMerchants] = useState<{id: string, name: string}[]>([]);
 
   useEffect(() => {
     fetchMerchants();
-  }, [fetchMerchants]);
+  }, []);
 
-  useEffect(() => {
-    fetchReportData();
-  }, [fetchReportData]);
-
-  function handleExport() {
-    const params = new URLSearchParams();
-    params.append('startTime', filters.startTime);
-    params.append('endTime', filters.endTime);
-    if (filters.selectedMerchants.length > 0) {
-      params.append('merchantIds', filters.selectedMerchants.join(','));
+  async function fetchMerchants() {
+    try {
+      const res = await fetch('/api/merchants');
+      const data = await res.json();
+      setMerchants(data);
+    } catch (err) {
+      toast.error('Erro ao carregar lojas');
     }
-    window.location.href = `/api/reports/export?${params.toString()}`;
   }
 
-  function toggleMerchant(id: string) {
-    setFilters(prev => ({
-      ...prev,
-      selectedMerchants: prev.selectedMerchants.includes(id)
-        ? prev.selectedMerchants.filter(mId => mId !== id)
-        : [...prev.selectedMerchants, id],
-    }));
+  async function loadReport() {
+    if (!merchantId) {
+      toast.error('Selecione uma loja');
+      return;
+    }
+    setLoading(true);
+    try {
+      const query = new URLSearchParams({
+        startTime: period.startTime,
+        endTime: period.endTime,
+        env: 'production',
+      });
+      const res = await fetch(`/api/merchants/${merchantId}/report?${query}`);
+      if (!res.ok) throw new Error('Erro ao buscar relatório');
+      const reportData = await res.json();
+      setData(reportData);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  if (loading && !summary) return <LoadingState />;
+  function exportCSV() {
+    if (!data) return;
+    const rows = [
+      ['Métrica', 'Valor'],
+      ['Faturamento Bruto', data.report.financial.grossRevenue],
+      ['Faturamento Líquido', data.report.financial.netRevenue],
+      ['Comissões', data.report.financial.commissions],
+      ['Total Pedidos', data.report.financial.totalOrders],
+      ['Ticket Médio', data.report.financial.avgTicket],
+      ['Taxa de Cancelamento', data.report.operational.cancellationRate + '%'],
+      ['Avaliação Média', data.report.operational.avgRating],
+    ];
+    const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `relatorio_ifood_${data.merchant.name}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-ink">Relatórios de Performance</h1>
-        <Button onClick={handleExport} variant="primary">
-          Exportar Relatório (CSV)
-        </Button>
+    <div className="p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Relatórios iFood</h1>
+          <p className="text-sm text-gray-500">Análise financeira e operacional por loja</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Select
+            value={merchantId}
+            onChange={(val) => setMerchantId(val)}
+            options={merchants.map(m => ({ label: m.name, value: m.id }))}
+            placeholder="Selecione a Loja"
+            className="w-64"
+          />
+          <Button onClick={loadReport} disabled={loading}>
+            {loading ? 'Carregando...' : 'Atualizar'}
+          </Button>
+        </div>
       </div>
 
-      {/* Filters */}
-      <Card className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-ink/60">Data Início</label>
-          <Input
-            type="date"
-            value={filters.startTime}
-            onChange={e => setFilters(prev => ({ ...prev, startTime: e.target.value }))}
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-ink/60">Data Fim</label>
-          <Input
-            type="date"
-            value={filters.endTime}
-            onChange={e => setFilters(prev => ({ ...prev, endTime: e.target.value }))}
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-ink/60">Lojas</label>
-          <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto p-2 border rounded-md">
-            {merchants.map(m => (
-              <label key={m.id} className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs cursor-pointer transition-colors ${filters.selectedMerchants.includes(m.id) ? 'bg-brand text-white' : 'bg-ink/10 text-ink'}`}>
-                <input
-                  type="checkbox"
-                  className="hidden"
-                  checked={filters.selectedMerchants.includes(m.id)}
-                  onChange={() => toggleMerchant(m.id)}
-                />
-                {m.name}
-              </label>
-            ))}
+      {data && (
+        <div className="space-y-6">
+          {/* Financial Panel */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title="Faturamento Bruto"
+              value={data.report.financial.grossRevenue}
+              icon={<DollarSign size={20} />}
+              prefix="R$ "
+            />
+            <StatCard
+              title="Faturamento Líquido"
+              value={data.report.financial.netRevenue}
+              icon={<TrendingUp size={20} />}
+              prefix="R$ "
+              color="text-green-600"
+            />
+            <StatCard
+              title="Comissões iFood"
+              value={data.report.financial.commissions}
+              icon={<TrendingDown size={20} />}
+              prefix="R$ "
+              color="text-red-600"
+            />
+            <StatCard
+              title="Ticket Médio"
+              value={data.report.financial.avgTicket}
+              icon={<ShoppingBag size={20} />}
+              prefix="R$ "
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-2 p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold">Desempenho Operacional</h3>
+                <Button variant="outline" size="sm" onClick={exportCSV}>
+                  <FileDown size={16} className="mr-2" /> Exportar CSV
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-gray-50 border">
+                  <div className="p-3 bg-white rounded-full shadow-sm"><Clock size={24} className="text-blue-500" /></div>
+                  <div>
+                    <p className="text-xs text-gray-500">Tempo Médio Preparo</p>
+                    <p className="text-lg font-bold">{(data.report.operational.avgPrepTime / 60).toFixed(1)} min</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-gray-50 border">
+                  <div className="p-3 bg-white rounded-full shadow-sm"><ShoppingBag size={24} className="text-orange-500" /></div>
+                  <div>
+                    <p className="text-xs text-gray-500">Taxa de Cancelamento</p>
+                    <p className="text-lg font-bold">{data.report.operational.cancellationRate.toFixed(2)}%</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-gray-50 border">
+                  <div className="p-3 bg-white rounded-full shadow-sm"><Star size={24} className="text-yellow-500" /></div>
+                  <div>
+                    <p className="text-xs text-gray-500">Avaliação Média</p>
+                    <p className="text-lg font-bold">{data.report.operational.avgRating.toFixed(1)} / 5</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </div>
         </div>
-      </Card>
-
-      {/* Summary Cards */}
-      {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="p-4">
-            <p className="text-sm text-ink/60">Faturamento Total</p>
-            <p className="text-2xl font-bold text-ink">R$ {summary.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-          </Card>
-          <Card className="p-4">
-            <p className="text-sm text-ink/60">Total de Pedidos</p>
-            <p className="text-2xl font-bold text-ink">{summary.totalOrders}</p>
-          </Card>
-          <Card className="p-4">
-            <p className="text-sm text-ink/60">Ticket Médio</p>
-            <p className="text-2xl font-bold text-ink">R$ {summary.avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-          </Card>
-          <Card className="p-4">
-            <p className="text-sm text-ink/60">Taxa de Cancelamento</p>
-            <p className="text-2xl font-bold text-ink">{summary.cancellationRate.toFixed(2)}%</p>
-          </Card>
-        </div>
       )}
-
-      {/* Performance Table */}
-      <Card>
-        <div className="p-4 border-b">
-          <h2 className="font-semibold text-ink">Performance por Loja</h2>
-        </div>
-        {loading ? (
-          <LoadingState />
-        ) : breakdown.length === 0 ? (
-          <EmptyState title="Sem dados" description="Nenhum dado encontrado para o período selecionado." />
-        ) : (
-          <Table>
-            <THead>
-              <TR>
-                <TH>Loja</TH>
-                <TH className="text-right">Faturamento</TH>
-                <TH className="text-right">Pedidos</TH>
-                <TH className="text-right">Ticket Médio</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {breakdown.map(b => (
-                <TR key={b.merchantId}>
-                  <TD>{b.name}</TD>
-                  <TD className="text-right">R$ {b.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TD>
-                  <TD className="text-right">{b.orders}</TD>
-                  <TD className="text-right">R$ {b.avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
-        )}
-      </Card>
     </div>
+  );
+}
+
+function StatCard({ title, titleColor = "text-gray-500", value, icon, prefix = "", color = "text-gray-900" }: any) {
+  return (
+    <Card className="p-4 flex items-center justify-between">
+      <div>
+        <p className={`text-xs font-medium ${titleColor}`}>{title}</p>
+        <p className={`text-2xl font-bold ${color}`}>{prefix}{value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+      </div>
+      <div className="p-3 bg-gray-100 rounded-full text-gray-600">
+        {icon}
+      </div>
+    </Card>
   );
 }

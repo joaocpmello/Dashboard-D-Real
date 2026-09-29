@@ -21,7 +21,11 @@ export function IfoodCredentialsClient({
   organizationId,
   canManageCreds,
 }: IfoodCredentialsClientProps) {
-  const [values, setValues] = useState(initialValues);
+  const [values, setValues] = useState({
+    ...initialValues,
+    authCodeSb: '',
+    authCodeProd: '',
+  });
   const [loading, setLoading] = useState(false);
 
   async function handleSave() {
@@ -30,7 +34,7 @@ export function IfoodCredentialsClient({
       // We send both environments to the /api/merchants endpoint.
       // The API expects a request for a specific environment, so we make two calls.
 
-      const saveEnv = async (env: 'sandbox' | 'production', id: string, secret: string) => {
+      const saveEnv = async (env: 'sandbox' | 'production', id: string, secret: string, authCode?: string) => {
         const res = await fetch('/api/merchants', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -39,6 +43,7 @@ export function IfoodCredentialsClient({
             environment: env,
             clientId: id,
             clientSecret: secret,
+            authorizationCode: authCode,
           }),
         });
         if (!res.ok) {
@@ -48,8 +53,8 @@ export function IfoodCredentialsClient({
       };
 
       await Promise.all([
-        saveEnv('sandbox', values.clientIdSb, values.clientSecretSb),
-        saveEnv('production', values.clientIdProd, values.clientSecretProd),
+        saveEnv('sandbox', values.clientIdSb, values.clientSecretSb, values.authCodeSb),
+        saveEnv('production', values.clientIdProd, values.clientSecretProd, values.authCodeProd),
       ]);
 
       toast.success('Credenciais salvas com sucesso!');
@@ -59,6 +64,7 @@ export function IfoodCredentialsClient({
       setLoading(false);
     }
   }
+
 
   if (!canManageCreds) {
     return (
@@ -72,6 +78,10 @@ export function IfoodCredentialsClient({
           <Input id="client-secret-sb" type="password" value="••••••••" readOnly />
         </div>
         <div className="space-y-1">
+          <Label htmlFor="auth-code-sb">Código Autorização · Sandbox</Label>
+          <Input id="auth-code-sb" type="text" value={values.authCodeSb || '••••••••'} readOnly className="font-mono" />
+        </div>
+        <div className="space-y-1">
           <Label htmlFor="client-id-prod">Client ID · Produção</Label>
           <Input id="client-id-prod" type="text" value={values.clientIdProd || 'Não configurado'} readOnly className="font-mono" />
         </div>
@@ -79,9 +89,14 @@ export function IfoodCredentialsClient({
           <Label htmlFor="client-secret-prod">Client Secret · Produção</Label>
           <Input id="client-secret-prod" type="password" value="••••••••" readOnly />
         </div>
+        <div className="space-y-1">
+          <Label htmlFor="auth-code-prod">Código Autorização · Produção</Label>
+          <Input id="auth-code-prod" type="text" value={values.authCodeProd || '••••••••'} readOnly className="font-mono" />
+        </div>
       </div>
     );
   }
+
 
   return (
     <div className="space-y-4">
@@ -106,6 +121,16 @@ export function IfoodCredentialsClient({
           />
         </div>
         <div className="space-y-1">
+          <Label htmlFor="authCodeSb">Código Autorização · Sandbox</Label>
+          <Input
+            id="authCodeSb"
+            type="text"
+            className="font-mono"
+            value={values.authCodeSb}
+            onChange={(e) => setValues({ ...values, authCodeSb: e.target.value })}
+          />
+        </div>
+        <div className="space-y-1">
           <Label htmlFor="clientIdProd">Client ID · Produção</Label>
           <Input
             id="clientIdProd"
@@ -122,6 +147,16 @@ export function IfoodCredentialsClient({
             type="password"
             value={values.clientSecretProd}
             onChange={(e) => setValues({ ...values, clientSecretProd: e.target.value })}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="authCodeProd">Código Autorização · Produção</Label>
+          <Input
+            id="authCodeProd"
+            type="text"
+            className="font-mono"
+            value={values.authCodeProd}
+            onChange={(e) => setValues({ ...values, authCodeProd: e.target.value })}
           />
         </div>
       </div>
