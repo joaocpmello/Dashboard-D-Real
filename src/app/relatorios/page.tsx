@@ -121,12 +121,15 @@ export default function IfoodRestaurantReport() {
         </div>
         <div className="flex items-center gap-3">
           <Select
-            value={merchantId}
+            defaultValue={merchantId}
             onChange={(val) => setMerchantId(val)}
-            options={merchants.map(m => ({ label: m.name, value: m.id }))}
-            placeholder="Selecione a Loja"
             className="w-64"
-          />
+          >
+            <option value="">Selecione a Loja</option>
+            {merchants.map(m => (
+              <option key={m.id} value={m.id}>{m.name}</option>
+            ))}
+          </Select>
           <Button onClick={loadReport} disabled={loading}>
             {loading ? 'Carregando...' : 'Atualizar'}
           </Button>
