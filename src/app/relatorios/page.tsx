@@ -172,7 +172,7 @@ export default function IfoodRestaurantReport() {
             <Card className="lg:col-span-2 p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-semibold">Desempenho Operacional</h3>
-                <Button variant="outline" size="sm" onClick={exportCSV}>
+                <Button variant="secondary" size="sm" onClick={exportCSV}>
                   <FileDown size={16} className="mr-2" /> Exportar CSV
                 </Button>
               </div>
