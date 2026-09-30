@@ -1,32 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { RBACService } from '@/lib/auth/rbac';
-import { toErrorResponse } from '@/lib/auth/errors';
+import { NextResponse } from 'next/server';
+import { requireSession } from '@/lib/auth/session';
 import { IfoodOrderService } from '@/lib/ifood/order';
-import { z } from 'zod';
+import { IfoodEnvironment } from '@prisma/client';
 
-const SyncSchema = z.object({
-  merchantId: z.string(),
-});
-
-export async function POST(req: NextRequest) {
+/**
+ * Sync iFood orders for a merchant.
+ * Supports both Centralized and Distributed flows via the TokenManager.
+ */
+export async function POST(req: Request) {
   try {
-    const session = await RBACService.requireRole('ADMIN');
+    const session = await requireSession();
     const organizationId = session.organizationId;
+
     if (!organizationId) {
-      return NextResponse.json({ error: 'Organização não definida' }, { status: 400 });
+      return NextResponse.json({ error: 'Organization not found in session' }, { status: 400 });
     }
-    const body = await req.json();
-    const { merchantId } = SyncSchema.parse(body);
+
+    const { merchantId, environment = 'production' } = await req.json();
+
+    if (!merchantId) {
+      return NextResponse.json({ error: 'Missing merchantId' }, { status: 400 });
+    }
 
     const service = new IfoodOrderService();
     const result = await service.syncOrders({
       organizationId,
-      actorUserId: session.id,
+      actorUserId: session.userId,
       merchantId,
+      environment: environment as IfoodEnvironment,
     });
 
-    return NextResponse.json(result);
-  } catch (err) {
-    return toErrorResponse(err);
+    return NextResponse.json({
+      status: 'SUCCESS',
+      syncedCount: result.syncedCount,
+    });
+  } catch (error: any) {
+    console.error('[ORDERS_SYNC_ERROR]:', error);
+    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }

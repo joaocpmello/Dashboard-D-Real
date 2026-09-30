@@ -45,6 +45,26 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum IfoodApplicationType {
+  CENTRALIZED
+  DISTRIBUTED
+}
+
+enum IfoodConnectionStatus {
+  DISCONNECTED
+  CODE_GENERATED
+  WAITING_AUTHORIZATION
+  CONNECTED
+  EXPIRED
+  REVOKED
+  ERROR
+}
+
+enum IfoodSyncModule {
+  ORDERS
+  FINANCIAL
+}
+
 // =============================================================================
 // Organizações
 // =============================================================================
@@ -60,8 +80,10 @@ model Organization {
 
   users     OrganizationUser[]
   merchants Merchant[]
+  ifoodMerchants IfoodMerchant[]
   creds     IfoodCredential[]
   audits    AuditLog[]
+  checkpoints IfoodSyncCheckpoint[]
   orders    Order[]
   categories Category[]
   products  Product[]
@@ -133,6 +155,23 @@ model Merchant {
   @@map("merchants")
 }
 
+model IfoodMerchant {
+  id              String   @id @default(uuid())
+  organizationId  String   @map("organization_id")
+  credentialId    String   @map("credential_id")
+  ifoodMerchantId String   @map("ifood_merchant_id")
+  name            String?
+  document        String?
+  linkedAt        DateTime @default(now()) @map("linked_at")
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  credential      IfoodCredential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, ifoodMerchantId])
+  @@index([organizationId])
+  @@map("ifood_merchants")
+}
+
 // =============================================================================
 // Credenciais iFood — uma coleção por Organization por ambiente
 // =============================================================================
@@ -141,6 +180,8 @@ model IfoodCredential {
   id                          String           @id @default(uuid())
   organizationId              String           @map("organization_id")
   environment                 IfoodEnvironment
+  applicationType            IfoodApplicationType @default(CENTRALIZED)
+  connectionStatus            IfoodConnectionStatus @default(DISCONNECTED)
 
   clientId                    String           @map("client_id")
   clientSecretCipher          String           @map("client_secret_cipher")
@@ -151,10 +192,21 @@ model IfoodCredential {
   accessTokenExpiresAt        DateTime?        @map("access_token_expires_at")
   accessTokenKeyVersion       Int?             @map("access_token_key_version")
 
+  encryptedRefreshToken      String?          @map("encrypted_refresh_token")
+  encryptedRefreshTokenKeyVersion Int?         @map("encrypted_refresh_token_key_version")
+  encryptedAuthorizationCodeVerifier String? @map("encrypted_authorization_code_verifier")
+  encryptedVerifierKeyVersion Int?            @map("encrypted_verifier_key_version")
+
+  userCode                    String?          @map("user_code")
+  authorizationStartedAt      DateTime?        @map("authorization_started_at")
+  authorizationCompletedAt    DateTime?        @map("authorization_completed_at")
+  grantedModules              Json?            @map("granted_modules")
+
   createdAt                   DateTime         @default(now()) @map("created_at")
   updatedAt                   DateTime         @updatedAt @map("updated_at")
 
   organization                Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  merchants                   IfoodMerchant[]
 
   @@unique([organizationId, environment])
   @@index([organizationId])
@@ -181,6 +233,22 @@ model AuditLog {
   @@index([organizationId, createdAt])
   @@index([userId, createdAt])
   @@map("audit_logs")
+}
+
+model IfoodSyncCheckpoint {
+  id                  String   @id @default(uuid())
+  organizationId      String   @map("organization_id")
+  merchantId          String   @map("merchant_id")
+  module              IfoodSyncModule
+  lastSyncTimestamp   DateTime @map("last_sync_timestamp")
+  lastEventId         String?  @map("last_event_id")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, merchantId, module])
+  @@index([organizationId])
+  @@map("ifood_sync_checkpoints")
 }
 
 // =============================================================================

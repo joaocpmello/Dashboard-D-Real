@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { IfoodConnectionWizard } from './IfoodConnectionWizard';
 
 interface ConnectStoreModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export function ConnectStoreModal({ isOpen, onClose }: ConnectStoreModalProps) {
   const [clientId, setClientId] = useState('');
   const [clientSecret, setClientSecret] = useState('');
   const [environment, setEnvironment] = useState<'sandbox' | 'production'>('sandbox');
+  const [showDistributedWizard, setShowDistributedWizard] = useState(false);
 
   if (!isOpen) return null;
 
@@ -137,6 +139,12 @@ export function ConnectStoreModal({ isOpen, onClose }: ConnectStoreModalProps) {
             Cancelar
           </Button>
           <Button
+            variant="ghost"
+            onClick={() => setShowDistributedWizard(true)}
+          >
+            Conexão Distribuída
+          </Button>
+          <Button
             variant="primary"
             onClick={handleSave}
             disabled={loading}
@@ -146,6 +154,12 @@ export function ConnectStoreModal({ isOpen, onClose }: ConnectStoreModalProps) {
         </div>
       </div>
     </div>
+    {showDistributedWizard && (
+      <IfoodConnectionWizard
+        isOpen={showDistributedWizard}
+        onClose={() => setShowDistributedWizard(false)}
+      />
+    )}
   );
 }
 
@@ -154,5 +168,15 @@ function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: str
     <label htmlFor={htmlFor} className="block text-sm font-medium text-ink-700 mb-1">
       {children}
     </label>
+  );
+}
+
+export function ConnectStoreModalWrapper({ isOpen, onClose }: ConnectStoreModalProps) {
+  return (
+    <>
+      <ConnectStoreModal isOpen={isOpen} onClose={onClose} />
+      {/* The wizard needs to be managed inside the modal or as a separate modal.
+          Since IfoodConnectionWizard is its own overlay, we can just render it. */}
+    </>
   );
 }

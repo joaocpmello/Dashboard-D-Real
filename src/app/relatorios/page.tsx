@@ -179,24 +179,41 @@ export default function IfoodRestaurantReport() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div className="flex items-center gap-4 p-4 rounded-lg bg-gray-50 border">
                   <div className="p-3 bg-white rounded-full shadow-sm"><Clock size={24} className="text-blue-500" /></div>
-                  <div>
+                  <div className="flex-1">
                     <p className="text-xs text-gray-500">Tempo Médio Preparo</p>
                     <p className="text-lg font-bold">{(data.report.operational.avgPrepTime / 60).toFixed(1)} min</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 rounded-lg bg-gray-50 border">
                   <div className="p-3 bg-white rounded-full shadow-sm"><ShoppingBag size={24} className="text-orange-500" /></div>
-                  <div>
+                  <div className="flex-1">
                     <p className="text-xs text-gray-500">Taxa de Cancelamento</p>
                     <p className="text-lg font-bold">{data.report.operational.cancellationRate.toFixed(2)}%</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 rounded-lg bg-gray-50 border">
                   <div className="p-3 bg-white rounded-full shadow-sm"><Star size={24} className="text-yellow-500" /></div>
-                  <div>
+                  <div className="flex-1">
                     <p className="text-xs text-gray-500">Avaliação Média</p>
                     <p className="text-lg font-bold">{data.report.operational.avgRating.toFixed(1)} / 5</p>
                   </div>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Período do Relatório</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Início</span>
+                  <span className="text-sm font-medium">
+                    {new Date(data.report.period.startTime).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Fim</span>
+                  <span className="text-sm font-medium">
+                    {new Date(data.report.period.endTime).toLocaleDateString('pt-BR')}
+                  </span>
                 </div>
               </div>
             </Card>

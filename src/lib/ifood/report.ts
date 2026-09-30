@@ -1,8 +1,7 @@
 import 'server-only';
 import { IfoodClient } from '@/lib/ifood/client';
-import { createIfoodAuthService } from '@/lib/ifood/auth';
-import { IfoodAuthError } from '@/lib/ifood/errors';
-import type { IfoodEnvironment } from '@/lib/ifood/types/merchant';
+import { IfoodTokenManager } from '@/lib/ifood/token-manager';
+import { IfoodEnvironment } from '@prisma/client';
 
 export interface ReportPeriod {
   startTime: Date;
@@ -32,8 +31,6 @@ export interface IfoodStoreReport {
 }
 
 export class IfoodReportService {
-  private authService = createIfoodAuthService();
-
   async getStoreReport(
     organizationId: string,
     merchantId: string,
@@ -41,7 +38,7 @@ export class IfoodReportService {
     period: ReportPeriod,
   ): Promise<IfoodStoreReport> {
     try {
-      const token = await this.authService.getAccessToken(organizationId, env);
+      const { accessToken } = await IfoodTokenManager.getAccessToken(organizationId, env);
       const client = new IfoodClient();
 
       // In a real implementation, we would call specific iFood report endpoints.
@@ -52,8 +49,8 @@ export class IfoodReportService {
       // as if we are calling the iFood API and processing it.
 
       const [financial, operational] = await Promise.all([
-        this.fetchFinancialMetrics(client, token, merchantId, period),
-        this.fetchOperationalMetrics(client, token, merchantId, period),
+        this.fetchFinancialMetrics(client, accessToken, merchantId, period),
+        this.fetchOperationalMetrics(client, accessToken, merchantId, period),
       ]);
 
       return {
@@ -62,7 +59,6 @@ export class IfoodReportService {
         period,
       };
     } catch (error) {
-      if (error instanceof IfoodAuthError) throw error;
       throw new Error(`Failed to fetch iFood report for merchant ${merchantId}: ${(error as Error).message}`);
     }
   }
