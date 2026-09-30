@@ -25,6 +25,7 @@ const credsSchema = z.object({
   environment: z.enum(['sandbox', 'production']),
   clientId: z.string().trim().min(1, 'Client ID é obrigatório').max(1000, 'Client ID muito longo'),
   clientSecret: z.string().trim().min(1, 'Client Secret é obrigatório').max(2000, 'Client Secret muito longo'),
+  authorizationCode: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -38,13 +39,11 @@ export async function POST(req: NextRequest) {
     if (!organizationId) {
       const { organizationRepo } = await import('@/repositories/organizations');
 
-      // Auto-create first organization for the user
       const newOrg = await organizationRepo.create({
         name: 'Marmitaria Principal',
         document: '00.000.000/0001-00',
       });
 
-      // Link user to this organization as ADMIN
       await organizationRepo.addMember({
         organizationId: newOrg.id,
         userId: session.id,
@@ -53,7 +52,6 @@ export async function POST(req: NextRequest) {
       organizationId = newOrg.id;
     }
 
-    // Order of priority: 1. Body input, 2. Session/Auto-created orgId
     const targetOrgId = input.organizationId || organizationId;
 
     if (!targetOrgId) {
@@ -70,6 +68,7 @@ export async function POST(req: NextRequest) {
       environment: input.environment,
       clientId: input.clientId,
       clientSecret: input.clientSecret,
+      authorizationCode: input.authorizationCode,
     });
 
     const { auditRepo } = await import('@/repositories/audit');

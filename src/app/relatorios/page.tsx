@@ -61,7 +61,7 @@ export default function IfoodRestaurantReport() {
     try {
       const res = await fetch('/api/merchants');
       const data = await res.json();
-      setMerchants(data);
+      setMerchants(data.merchants || []);
     } catch (err) {
       toast.error('Erro ao carregar lojas');
     }
