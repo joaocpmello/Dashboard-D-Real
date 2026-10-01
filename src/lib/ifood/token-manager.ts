@@ -28,7 +28,7 @@ export class IfoodTokenManager {
         where: {
           organizationId,
           environment,
-          ...(connectionId ? { id: connectionId } : { applicationType: 'DISTRIBUTED' }),
+          ...(connectionId ? { id: connectionId } : { applicationType: 'DISTRIBUTED' as any }),
         },
       });
     });
