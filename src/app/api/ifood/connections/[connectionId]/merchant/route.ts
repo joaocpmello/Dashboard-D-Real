@@ -61,7 +61,7 @@ export async function POST(
       }
 
       // 3. Bind the merchant to the organization
-      const merchant = await tx.ifoodMerchant.upsert({
+      const merchant = await tx.merchant.upsert({
         where: {
           organizationId_ifoodMerchantId: {
             organizationId,
@@ -70,15 +70,13 @@ export async function POST(
         },
         create: {
           organizationId,
-          credentialId: connectionId,
           ifoodMerchantId,
           name: name || 'Unknown Merchant',
-          document: document || '',
+          corporateName: document || '',
         },
         update: {
           name: name || 'Unknown Merchant',
-          document: document || '',
-          credentialId: connectionId,
+          corporateName: document || '',
         },
       });
 
