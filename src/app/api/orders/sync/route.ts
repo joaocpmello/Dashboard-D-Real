@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     const service = new IfoodOrderService();
     const result = await service.syncOrders({
       organizationId,
-      actorUserId: session.userId,
+      actorUserId: session.id,
       merchantId,
       environment: environment as IfoodEnvironment,
     });
