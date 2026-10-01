@@ -23,6 +23,7 @@ export function IfoodConnectionWizard({ isOpen, onClose }: IfoodConnectionWizard
     connectionId: string;
     userCode: string;
     expiresAt: Date;
+    verificationUrlComplete?: string;
   } | null>(null);
 
   // Step 2 State
