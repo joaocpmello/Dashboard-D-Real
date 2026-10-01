@@ -1,9 +1,3 @@
-// Prisma schema — SaaS Marmitarias iFood
-// Convenções:
-// - PK UUID (`@default(uuid())`) gerado em pgcrypto (extension ativada via SQL na migration).
-// - `organization_id` em toda tabela de negócio.
-// - Tabelas multi-tenant habilitam RLS na migration.
-
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["multiSchema"]
@@ -15,9 +9,226 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// =============================================================================
-// Enums
-// =============================================================================
+model Organization {
+  id           String             @id @default(uuid())
+  name         String
+  document     String             @unique
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  plan         Plan               @default(STARTER)
+  maxMerchants Int                @default(2)
+  audits       AuditLog[]
+  categories   Category[]
+  creds        IfoodCredential[]
+  merchants    Merchant[]
+  orders       Order[]
+  users        OrganizationUser[]
+  costs        ProductCost[]
+  prices       ProductPrice[]
+  products     Product[]
+
+  @@map("organizations")
+}
+
+model User {
+  id           String             @id
+  email        String             @unique
+  fullName     String?            @map("full_name")
+  isSuperAdmin Boolean            @default(false) @map("is_super_admin")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  audits       AuditLog[]
+  memberships  OrganizationUser[]
+
+  @@map("users")
+}
+
+model OrganizationUser {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  userId         String       @map("user_id")
+  role           UserRole
+  createdAt      DateTime     @default(now()) @map("created_at")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("organization_users")
+}
+
+model Merchant {
+  id              String       @id @default(uuid())
+  organizationId  String       @map("organization_id")
+  ifoodMerchantId String       @map("ifood_merchant_id")
+  name            String?
+  corporateName   String?      @map("corporate_name")
+  status          String?
+  lastSyncedAt    DateTime?    @map("last_synced_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  categories      Category[]
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orders          Order[]
+  products        Product[]
+
+  @@unique([organizationId, ifoodMerchantId])
+  @@index([organizationId])
+  @@map("merchants")
+}
+
+model IfoodCredential {
+  id                                 String           @id @default(uuid())
+  organizationId                     String           @map("organization_id")
+  environment                        IfoodEnvironment
+  clientId                           String           @map("client_id")
+  clientSecretCipher                 String           @map("client_secret_cipher")
+  clientSecretKeyVersion             Int              @default(1) @map("client_secret_key_version")
+  accessTokenCipher                  String?          @map("access_token_cipher")
+  accessTokenExpiresAt               DateTime?        @map("access_token_expires_at")
+  accessTokenKeyVersion              Int?             @map("access_token_key_version")
+  createdAt                          DateTime         @default(now()) @map("created_at")
+  updatedAt                          DateTime         @updatedAt @map("updated_at")
+  authorizationCode                  String?          @map("authorization_code")
+  applicationType                    String?          @default("CENTRALIZED")
+  connectionStatus                   String?          @default("DISCONNECTED")
+  encryptedRefreshToken              String?
+  encryptedRefreshTokenKeyVersion    Int?
+  encryptedAuthorizationCodeVerifier String?
+  encryptedVerifierKeyVersion        Int?
+  userCode                           String?
+  authorizationStartedAt             DateTime?        @db.Timestamptz(6)
+  authorizationCompletedAt           DateTime?        @db.Timestamptz(6)
+  grantedModules                     Json?
+  organization                       Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, environment])
+  @@index([organizationId])
+  @@map("ifood_credentials")
+}
+
+model AuditLog {
+  id             String        @id @default(uuid())
+  organizationId String?       @map("organization_id")
+  userId         String?       @map("user_id")
+  action         String
+  entity         String?
+  entityId       String?       @map("entity_id")
+  metadata       Json?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  user           User?         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([userId, createdAt])
+  @@map("audit_logs")
+}
+
+model Order {
+  id              String       @id @default(uuid())
+  organizationId  String       @map("organization_id")
+  merchantId      String       @map("merchant_id")
+  ifoodOrderId    String       @map("ifood_order_id")
+  status          OrderStatus
+  total           Decimal      @db.Decimal(10, 2)
+  customerName    String?      @map("customer_name")
+  customerPhone   String?      @map("customer_phone")
+  customerAddress String?      @map("customer_address")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  items           OrderItem[]
+  merchant        Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, ifoodOrderId])
+  @@index([organizationId])
+  @@index([merchantId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id             String  @id @default(uuid())
+  orderId        String  @map("order_id")
+  ifoodProductId String  @map("ifood_product_id")
+  productName    String
+  quantity       Int
+  unitPrice      Decimal @db.Decimal(10, 2)
+  totalPrice     Decimal @db.Decimal(10, 2)
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+model Category {
+  id              String       @id @default(uuid())
+  organizationId  String       @map("organization_id")
+  merchantId      String       @map("merchant_id")
+  ifoodCategoryId String       @map("ifood_category_id")
+  name            String
+  position        Int?
+  active          Boolean      @default(true)
+  merchant        Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  products        Product[]
+
+  @@unique([organizationId, ifoodCategoryId])
+  @@index([organizationId])
+  @@index([merchantId])
+  @@map("categories")
+}
+
+model Product {
+  id             String         @id @default(uuid())
+  organizationId String         @map("organization_id")
+  merchantId     String         @map("merchant_id")
+  categoryId     String         @map("category_id")
+  ifoodProductId String         @map("ifood_product_id")
+  name           String
+  description    String?
+  active         Boolean        @default(true)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  cost           ProductCost?
+  prices         ProductPrice[]
+  category       Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  merchant       Merchant       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, ifoodProductId])
+  @@index([organizationId])
+  @@index([merchantId])
+  @@map("products")
+}
+
+model ProductPrice {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  productId      String       @map("product_id")
+  price          Decimal      @db.Decimal(10, 2)
+  currency       String       @default("BRL")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([productId])
+  @@map("product_prices")
+}
+
+model ProductCost {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  productId      String       @unique @map("product_id")
+  cost           Decimal      @db.Decimal(10, 2)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, productId])
+  @@index([organizationId])
+  @@map("product_costs")
+}
 
 enum UserRole {
   ADMIN
@@ -43,330 +254,4 @@ enum OrderStatus {
   DISPATCHED
   DELIVERED
   CANCELLED
-}
-
-enum IfoodApplicationType {
-  CENTRALIZED
-  DISTRIBUTED
-}
-
-enum IfoodConnectionStatus {
-  DISCONNECTED
-  CODE_GENERATED
-  WAITING_AUTHORIZATION
-  CONNECTED
-  EXPIRED
-  REVOKED
-  ERROR
-}
-
-enum IfoodSyncModule {
-  ORDERS
-  FINANCIAL
-}
-
-// =============================================================================
-// Organizações
-// =============================================================================
-
-model Organization {
-  id        String   @id @default(uuid())
-  name      String
-  document  String   @unique
-  plan      Plan     @default(STARTER)
-  maxMerchants Int    @default(2)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  users     OrganizationUser[]
-  merchants Merchant[]
-  ifoodMerchants IfoodMerchant[]
-  creds     IfoodCredential[]
-  audits    AuditLog[]
-  checkpoints IfoodSyncCheckpoint[]
-  orders    Order[]
-  categories Category[]
-  products  Product[]
-  prices    ProductPrice[]
-  costs     ProductCost[]
-
-  @@map("organizations")
-}
-
-// =============================================================================
-// Usuários (espelho server-side de auth.users do Supabase)
-// =============================================================================
-
-model User {
-  id             String   @id // = auth.users.id no Supabase; sem default Prisma
-  email          String   @unique
-  fullName       String?  @map("full_name")
-  isSuperAdmin   Boolean  @default(false) @map("is_super_admin")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  memberships    OrganizationUser[]
-  audits         AuditLog[]
-
-  @@map("users")
-}
-
-// =============================================================================
-// Associação User ↔ Organization com RBAC
-// =============================================================================
-
-model OrganizationUser {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  userId         String   @map("user_id")
-  role           UserRole
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([organizationId, userId])
-  @@index([userId])
-  @@map("organization_users")
-}
-
-// =============================================================================
-// Merchants (lojas do iFood)
-// =============================================================================
-
-model Merchant {
-  id              String    @id @default(uuid())
-  organizationId  String    @map("organization_id")
-  ifoodMerchantId String    @map("ifood_merchant_id")
-  name            String?
-  corporateName   String?   @map("corporate_name")
-  status          String?   // OK | WARNING | CLOSED | ERROR | null (ainda não sincronizado)
-  lastSyncedAt    DateTime? @map("last_synced_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  orders          Order[]
-  categories     Category[]
-  products       Product[]
-
-  @@unique([organizationId, ifoodMerchantId])
-  @@index([organizationId])
-  @@map("merchants")
-}
-
-model IfoodMerchant {
-  id              String   @id @default(uuid())
-  organizationId  String   @map("organization_id")
-  credentialId    String   @map("credential_id")
-  ifoodMerchantId String   @map("ifood_merchant_id")
-  name            String?
-  document        String?
-  linkedAt        DateTime @default(now()) @map("linked_at")
-
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  credential      IfoodCredential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
-
-  @@unique([organizationId, ifoodMerchantId])
-  @@index([organizationId])
-  @@map("ifood_merchants")
-}
-
-// =============================================================================
-// Credenciais iFood — uma coleção por Organization por ambiente
-// =============================================================================
-
-model IfoodCredential {
-  id                          String           @id @default(uuid())
-  organizationId              String           @map("organization_id")
-  environment                 IfoodEnvironment
-  applicationType            IfoodApplicationType @default(CENTRALIZED)
-  connectionStatus            IfoodConnectionStatus @default(DISCONNECTED)
-
-  clientId                    String           @map("client_id")
-  clientSecretCipher          String           @map("client_secret_cipher")
-  clientSecretKeyVersion      Int              @default(1) @map("client_secret_key_version")
-  authorizationCode           String?          @map("authorization_code")
-
-  accessTokenCipher           String?          @map("access_token_cipher")
-  accessTokenExpiresAt        DateTime?        @map("access_token_expires_at")
-  accessTokenKeyVersion       Int?             @map("access_token_key_version")
-
-  encryptedRefreshToken      String?          @map("encrypted_refresh_token")
-  encryptedRefreshTokenKeyVersion Int?         @map("encrypted_refresh_token_key_version")
-  encryptedAuthorizationCodeVerifier String? @map("encrypted_authorization_code_verifier")
-  encryptedVerifierKeyVersion Int?            @map("encrypted_verifier_key_version")
-
-  userCode                    String?          @map("user_code")
-  authorizationStartedAt      DateTime?        @map("authorization_started_at")
-  authorizationCompletedAt    DateTime?        @map("authorization_completed_at")
-  grantedModules              Json?            @map("granted_modules")
-
-  createdAt                   DateTime         @default(now()) @map("created_at")
-  updatedAt                   DateTime         @updatedAt @map("updated_at")
-
-  organization                Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  merchants                   IfoodMerchant[]
-
-  @@unique([organizationId, environment])
-  @@index([organizationId])
-  @@map("ifood_credentials")
-}
-
-// =============================================================================
-// Auditoria
-// =============================================================================
-
-model AuditLog {
-  id             String   @id @default(uuid())
-  organizationId String?  @map("organization_id")
-  userId         String?  @map("user_id")
-  action         String   // ex.: organization.create
-  entity         String?  // ex.: Merchant
-  entityId       String?  @map("entity_id")
-  metadata       Json?
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId, createdAt])
-  @@index([userId, createdAt])
-  @@map("audit_logs")
-}
-
-model IfoodSyncCheckpoint {
-  id                  String   @id @default(uuid())
-  organizationId      String   @map("organization_id")
-  merchantId          String   @map("merchant_id")
-  module              IfoodSyncModule
-  lastSyncTimestamp   DateTime @map("last_sync_timestamp")
-  lastEventId         String?  @map("last_event_id")
-  updatedAt           DateTime @updatedAt @map("updated_at")
-
-  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@unique([organizationId, merchantId, module])
-  @@index([organizationId])
-  @@map("ifood_sync_checkpoints")
-}
-
-// =============================================================================
-// Pedidos (Orders)
-// =============================================================================
-
-model Order {
-  id              String      @id @default(uuid())
-  organizationId  String      @map("organization_id")
-  merchantId      String      @map("merchant_id")
-  ifoodOrderId    String      @map("ifood_order_id")
-  status          OrderStatus
-  total           Decimal     @db.Decimal(10, 2)
-  customerName    String?     @map("customer_name")
-  customerPhone   String?     @map("customer_phone")
-  customerAddress String?    @map("customer_address")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
-
-  items           OrderItem[]
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  merchant        Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-
-  @@unique([organizationId, ifoodOrderId])
-  @@index([organizationId])
-  @@index([merchantId])
-  @@map("orders")
-}
-
-model OrderItem {
-  id              String  @id @default(uuid())
-  orderId         String  @map("order_id")
-  ifoodProductId  String  @map("ifood_product_id")
-  productName     String
-  quantity        Int
-  unitPrice       Decimal @db.Decimal(10, 2)
-  totalPrice      Decimal @db.Decimal(10, 2)
-
-  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  @@map("order_items")
-}
-
-// =============================================================================
-// Catálogo (Catalog)
-// =============================================================================
-
-model Category {
-  id              String   @id @default(uuid())
-  organizationId  String   @map("organization_id")
-  merchantId      String   @map("merchant_id")
-  ifoodCategoryId String   @map("ifood_category_id")
-  name            String
-  position        Int?
-  active          Boolean  @default(true)
-
-  products        Product[]
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  merchant        Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-
-  @@unique([organizationId, ifoodCategoryId])
-  @@index([organizationId])
-  @@index([merchantId])
-  @@map("categories")
-}
-
-model Product {
-  id              String   @id @default(uuid())
-  organizationId  String   @map("organization_id")
-  merchantId      String   @map("merchant_id")
-  categoryId      String   @map("category_id")
-  ifoodProductId  String   @map("ifood_product_id")
-  name            String
-  description     String?
-  active          Boolean  @default(true)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-
-  category        Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  merchant        Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  prices          ProductPrice[]
-  cost            ProductCost?
-
-  @@unique([organizationId, ifoodProductId])
-  @@index([organizationId])
-  @@index([merchantId])
-  @@map("products")
-}
-
-model ProductPrice {
-  id              String   @id @default(uuid())
-  organizationId  String   @map("organization_id")
-  productId       String   @map("product_id")
-  price           Decimal  @db.Decimal(10, 2)
-  currency        String   @default("BRL")
-  createdAt       DateTime @default(now()) @map("created_at")
-
-  product         Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId])
-  @@index([productId])
-  @@map("product_prices")
-}
-
-model ProductCost {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  productId      String   @unique @map("product_id")
-  cost           Decimal  @db.Decimal(10, 2)
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@unique([organizationId, productId])
-  @@index([organizationId])
-  @@map("product_costs")
 }
