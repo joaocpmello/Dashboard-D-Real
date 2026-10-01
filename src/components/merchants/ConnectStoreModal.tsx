@@ -7,6 +7,14 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { IfoodConnectionWizard } from './IfoodConnectionWizard';
 
+function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
+  return (
+    <label htmlFor={htmlFor} className="block text-sm font-medium text-ink-700 mb-1">
+      {children}
+    </label>
+  );
+}
+
 interface ConnectStoreModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -71,103 +79,97 @@ export function ConnectStoreModal({ isOpen, onClose }: ConnectStoreModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative border border-slate-200">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-ink-400 hover:text-ink-900 transition-colors"
-          aria-label="Fechar"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        </button>
-
-        <h2 className="text-xl font-bold text-ink-900 mb-2">Credenciais do Aplicativo iFood</h2>
-        <p className="text-sm text-muted-foreground mb-6">
-          Insira o Client ID e Client Secret do seu aplicativo cadastrado no Portal do Desenvolvedor iFood. Ao sincronizar, o sistema importará automaticamente todas as lojas vinculadas a este aplicativo.
-        </p>
-
-        {error && (
-          <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm border border-red-200 mb-4 flex gap-2 items-start">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 mt-0.5 flex-shrink-0">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative border border-slate-200">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-ink-400 hover:text-ink-900 transition-colors"
+            aria-label="Fechar"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+              <path d="M18 6L6 18M6 6l12 12" />
             </svg>
-            <span>{error}</span>
-          </div>
-        )}
+          </button>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Ambiente</Label>
-            <select
-              className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all"
-              value={environment}
-              onChange={(e) => setEnvironment(e.target.value as any)}
+          <h2 className="text-xl font-bold text-ink-900 mb-2">Credenciais do Aplicativo iFood</h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            Insira o Client ID e Client Secret do seu aplicativo cadastrado no Portal do Desenvolvedor iFood. Ao sincronizar, o sistema importará automaticamente todas as lojas vinculadas a este aplicativo.
+          </p>
+
+          {error && (
+            <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm border border-red-200 mb-4 flex gap-2 items-start">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 mt-0.5 flex-shrink-0">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Ambiente</Label>
+              <select
+                className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                value={environment}
+                onChange={(e) => setEnvironment(e.target.value as any)}
+              >
+                <option value="sandbox">Sandbox (Testes)</option>
+                <option value="production">Produção</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="clientId">Client ID</Label>
+              <Input
+                id="clientId"
+                type="text"
+                className="font-mono"
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                placeholder="Ex: aaaa-bbbb-cccc..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="clientSecret">Client Secret</Label>
+              <Input
+                id="clientSecret"
+                type="password"
+                value={clientSecret}
+                onChange={(e) => setClientSecret(e.target.value)}
+                placeholder="••••••••••••"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-8">
+            <Button variant="ghost" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setShowDistributedWizard(true)}
             >
-              <option value="sandbox">Sandbox (Testes)</option>
-              <option value="production">Produção</option>
-            </select>
+              Conexão Distribuída
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSave}
+              disabled={loading}
+            >
+              {loading ? 'Conectando...' : 'Salvar e Sincronizar'}
+            </Button>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="clientId">Client ID</Label>
-            <Input
-              id="clientId"
-              type="text"
-              className="font-mono"
-              value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-              placeholder="Ex: aaaa-bbbb-cccc..."
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="clientSecret">Client Secret</Label>
-            <Input
-              id="clientSecret"
-              type="password"
-              value={clientSecret}
-              onChange={(e) => setClientSecret(e.target.value)}
-              placeholder="••••••••••••"
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-3 mt-8">
-          <Button variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => setShowDistributedWizard(true)}
-          >
-            Conexão Distribuída
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSave}
-            disabled={loading}
-          >
-            {loading ? 'Conectando...' : 'Salvar e Sincronizar'}
-          </Button>
         </div>
       </div>
-    </div>
-    {showDistributedWizard && (
-      <IfoodConnectionWizard
-        isOpen={showDistributedWizard}
-        onClose={() => setShowDistributedWizard(false)}
-      />
-    )}
-  );
-}
-
-function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
-  return (
-    <label htmlFor={htmlFor} className="block text-sm font-medium text-ink-700 mb-1">
-      {children}
-    </label>
+      {showDistributedWizard && (
+        <IfoodConnectionWizard
+          isOpen={showDistributedWizard}
+          onClose={() => setShowDistributedWizard(false)}
+        />
+      )}
+    </>
   );
 }
 
@@ -175,8 +177,6 @@ export function ConnectStoreModalWrapper({ isOpen, onClose }: ConnectStoreModalP
   return (
     <>
       <ConnectStoreModal isOpen={isOpen} onClose={onClose} />
-      {/* The wizard needs to be managed inside the modal or as a separate modal.
-          Since IfoodConnectionWizard is its own overlay, we can just render it. */}
     </>
   );
 }
