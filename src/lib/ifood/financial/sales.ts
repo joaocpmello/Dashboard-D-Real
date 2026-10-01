@@ -79,7 +79,7 @@ export class IfoodFinancialService {
       path: `/financial/v1.0/events`,
       query: {
         merchantId: input.merchantId,
-        since,
+        since: input.since,
       },
       bearerToken: accessToken,
     });
