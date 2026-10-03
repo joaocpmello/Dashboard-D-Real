@@ -55,16 +55,20 @@ export async function POST(req: Request) {
         throw new Error(`Credentials for ${environment} environment are not configured on the server.`);
       }
 
-      const bodyParams = `grant_type=user_code&client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(clientSecret)}&code_challenge=${encodeURIComponent(codeChallenge)}&code_challenge_method=S256`;
+      const bodyParams = new URLSearchParams({
+        grant_type: 'user_code',
+        client_id: clientId,
+        client_secret: clientSecret,
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256'
+      });
 
-      console.log(`[IFOOD_AUTH_REQUEST_BODY] [${environment}]:`, bodyParams);
+      console.log(`[IFOOD_AUTH_REQUEST_BODY] [${environment}]:`, bodyParams.toString());
 
       const response = await fetch('https://merchant-api.ifood.com.br/authentication/v1.0/oauth/token', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json',
-          'Content-Length': Buffer.byteLength(bodyParams).toString()
+          'Accept': 'application/json'
         },
         body: bodyParams
       });
