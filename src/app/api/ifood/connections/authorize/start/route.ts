@@ -56,8 +56,14 @@ export async function POST(req: Request) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('[IFOOD_USERCODE_ERROR]:', errorData);
-        throw new Error(errorData.error || 'iFood failed to generate authorization code');
+        console.error('[IFOOD_USERCODE_ERROR]:', JSON.stringify(errorData, null, 2));
+
+        // Ensure we throw a string message
+        const errorMessage = typeof errorData.error === 'string'
+          ? errorData.error
+          : (errorData.message || 'iFood failed to generate authorization code');
+
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
