@@ -55,24 +55,22 @@ export async function POST(req: Request) {
         throw new Error(`Credentials for ${environment} environment are not configured on the server.`);
       }
 
-      // Use Basic Auth for credentials
+      // 1. Create the Basic Auth header
       const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
-      const bodyParams = new URLSearchParams({
-        grant_type: 'user_code',
-        code_challenge: codeChallenge,
-        code_challenge_method: 'S256'
-      });
+      // 2. Create the body using iFood's specific camelCase keys
+      const bodyParams = `grantType=user_code&clientId=${encodeURIComponent(clientId)}&clientSecret=${encodeURIComponent(clientSecret)}&authorizationCodeVerifier=${encodeURIComponent(codeChallenge)}&codeChallengeMethod=S256`;
 
-      console.log(`[IFOOD_AUTH_REQUEST_BODY] [${environment}]:`, bodyParams.toString());
+      console.log(`[IFOOD_AUTH_REQUEST_BODY] [${environment}]:`, bodyParams);
 
       const response = await fetch('https://merchant-api.ifood.com.br/authentication/v1.0/oauth/token', {
         method: 'POST',
         headers: {
           'Authorization': `Basic ${authHeader}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json'
         },
-        body: bodyParams
+        body: new TextEncoder().encode(bodyParams)
       });
 
       if (!response.ok) {
