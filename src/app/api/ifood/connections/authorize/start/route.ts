@@ -41,10 +41,23 @@ export async function POST(req: Request) {
         where: { organizationId_environment: { organizationId, environment: environment as IfoodEnvironment } },
       });
 
-      // 3. Call iFood to generate REAL userCode
-      const bodyParams = `grant_type=user_code&client_id=${encodeURIComponent(process.env.IFOOD_CLIENT_ID || '')}&client_secret=${encodeURIComponent(process.env.IFOOD_CLIENT_SECRET || '')}&code_challenge=${encodeURIComponent(codeChallenge)}&code_challenge_method=S256`;
+      // 3. Determine which credentials to use based on the environment
+      const clientId = environment === 'sandbox'
+        ? process.env.IFOOD_SANDBOX_CLIENT_ID
+        : process.env.IFOOD_CLIENT_ID;
 
-      console.log('[IFOOD_AUTH_REQUEST_BODY]:', bodyParams);
+      const clientSecret = environment === 'sandbox'
+        ? process.env.IFOOD_SANDBOX_CLIENT_SECRET
+        : process.env.IFOOD_CLIENT_SECRET;
+
+      if (!clientId || !clientSecret) {
+        console.error(`[IFOOD_AUTH_MISSING_CREDS]: Missing credentials for environment: ${environment}`);
+        throw new Error(`Credentials for ${environment} environment are not configured on the server.`);
+      }
+
+      const bodyParams = `grant_type=user_code&client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(clientSecret)}&code_challenge=${encodeURIComponent(codeChallenge)}&code_challenge_method=S256`;
+
+      console.log(`[IFOOD_AUTH_REQUEST_BODY] [${environment}]:`, bodyParams);
 
       const response = await fetch('https://merchant-api.ifood.com.br/authentication/v1.0/oauth/token', {
         method: 'POST',
