@@ -55,13 +55,19 @@ export async function POST(req: Request) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('[IFOOD_USERCODE_ERROR]:', JSON.stringify(errorData, null, 2));
+        const errorText = await response.text();
+        console.error('[IFOOD_USERCODE_RAW_ERROR]:', {
+          status: response.status,
+          body: errorText
+        });
 
-        // Ensure we throw a string message
-        const errorMessage = typeof errorData.error === 'string'
-          ? errorData.error
-          : (errorData.message || 'iFood failed to generate authorization code');
+        let errorMessage = `iFood Error (${response.status})`;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorData.message || JSON.stringify(errorData);
+        } catch (e) {
+          errorMessage = errorText || 'Unknown iFood error';
+        }
 
         throw new Error(errorMessage);
       }
