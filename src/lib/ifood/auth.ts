@@ -28,9 +28,9 @@ async function fetchAccessTokenFromIfood(
   const client = new IfoodClient();
   const url = `${client.baseUrl}/authentication/v1.0/oauth/token`;
   const body = new URLSearchParams({
-    grantType: 'client_credentials',
-    clientId,
-    clientSecret,
+    grant_type: 'client_credentials',
+    client_id: clientId,
+    client_secret: clientSecret,
   });
 
   const res = await fetch(url, {

@@ -55,10 +55,11 @@ export async function POST(req: Request) {
         throw new Error(`Credentials for ${environment} environment are not configured on the server.`);
       }
 
+      // Use Basic Auth for credentials
+      const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+
       const bodyParams = new URLSearchParams({
         grant_type: 'user_code',
-        client_id: clientId,
-        client_secret: clientSecret,
         code_challenge: codeChallenge,
         code_challenge_method: 'S256'
       });
@@ -68,6 +69,7 @@ export async function POST(req: Request) {
       const response = await fetch('https://merchant-api.ifood.com.br/authentication/v1.0/oauth/token', {
         method: 'POST',
         headers: {
+          'Authorization': `Basic ${authHeader}`,
           'Accept': 'application/json'
         },
         body: bodyParams
