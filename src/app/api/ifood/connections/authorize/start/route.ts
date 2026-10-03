@@ -29,38 +29,40 @@ export async function POST(req: Request) {
 
     return await withTenantContext(organizationId, async (tx) => {
       // 1. Generate PKCE verifier (cryptographically secure random string)
-      // iFood typically expects a high-entropy string for the verifier
       const verifier = randomBytes(32).toString('base64url');
       const { cipher, keyVersion } = encryptSecret(verifier);
+
+      // Compute S256 Challenge for PKCE
+      const challengeBuffer = require('node:crypto').createHash('sha256').update(verifier).digest();
+      const codeChallenge = Buffer.from(challengeBuffer).toString('base64url');
 
       // 2. Check for existing pending connection to avoid duplicates
       const existing = await tx.ifoodCredential.findUnique({
         where: { organizationId_environment: { organizationId, environment: environment as IfoodEnvironment } },
       });
 
-      // 3. Call iFood to generate userCode
-      // Endpoint: POST /authentication/v1.0/oauth/token (using a specific grant for userCode)
-      // Note: In Distributed flow, this is often a different endpoint or grant type
-      // based on iFood Developer docs.
+      // 3. Call iFood to generate REAL userCode
+      const response = await fetch('https://merchant-api.ifood.com.br/authentication/v1.0/oauth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'user_code',
+          client_id: process.env.IFOOD_CLIENT_ID || '',
+          client_secret: process.env.IFOOD_CLIENT_SECRET || '',
+          code_challenge: codeChallenge,
+          code_challenge_method: 'S256'
+        })
+      });
 
-      // Mocking the iFood API call for userCode generation as the exact
-      // 'userCode' grant is specific to the Distributed App configuration.
-      // In a real scenario, this would be:
-      // const response = await fetch('https://merchant-api.ifood.com.br/authentication/v1.0/oauth/token', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      //   body: new URLSearchParams({
-      //     grant_type: 'user_code',
-      //     client_id: process.env.IFOOD_CLIENT_ID,
-      //     client_secret: process.env.IFOOD_CLIENT_SECRET,
-      //     code_challenge: computeS256Challenge(verifier),
-      //     code_challenge_method: 'S256'
-      //   })
-      // });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[IFOOD_USERCODE_ERROR]:', errorData);
+        throw new Error(errorData.error || 'iFood failed to generate authorization code');
+      }
 
-      // For now, implementing the data persistence logic.
-      const userCode = `IF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+      const data = await response.json();
+      const userCode = data.userCode;
+      const expiresAt = new Date(Date.now() + (data.expiresIn || 600) * 1000);
 
       const credential = await tx.ifoodCredential.upsert({
         where: { organizationId_environment: { organizationId, environment: environment as IfoodEnvironment } },
