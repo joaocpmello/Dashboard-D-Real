@@ -42,16 +42,18 @@ export async function POST(req: Request) {
       });
 
       // 3. Call iFood to generate REAL userCode
+      const bodyParams = `grant_type=user_code&client_id=${encodeURIComponent(process.env.IFOOD_CLIENT_ID || '')}&client_secret=${encodeURIComponent(process.env.IFOOD_CLIENT_SECRET || '')}&code_challenge=${encodeURIComponent(codeChallenge)}&code_challenge_method=S256`;
+
+      console.log('[IFOOD_AUTH_REQUEST_BODY]:', bodyParams);
+
       const response = await fetch('https://merchant-api.ifood.com.br/authentication/v1.0/oauth/token', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'user_code',
-          client_id: process.env.IFOOD_CLIENT_ID || '',
-          client_secret: process.env.IFOOD_CLIENT_SECRET || '',
-          code_challenge: codeChallenge,
-          code_challenge_method: 'S256'
-        })
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+          'Content-Length': Buffer.byteLength(bodyParams).toString()
+        },
+        body: bodyParams
       });
 
       if (!response.ok) {
