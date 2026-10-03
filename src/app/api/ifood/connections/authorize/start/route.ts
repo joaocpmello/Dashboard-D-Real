@@ -58,25 +58,19 @@ export async function POST(req: Request) {
       // 1. Create the Basic Auth header
       const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
-      // 2. Create the body as a JSON object
-      const body = {
-        grantType: 'user_code',
-        clientId: clientId,
-        clientSecret: clientSecret,
-        authorizationCodeVerifier: codeChallenge,
-        codeChallengeMethod: 'S256'
-      };
+      // 2. Create the body using iFood's specific camelCase keys and form-urlencoded format
+      const bodyParams = `grantType=user_code&clientId=${encodeURIComponent(clientId)}&clientSecret=${encodeURIComponent(clientSecret)}&authorizationCodeVerifier=${encodeURIComponent(codeChallenge)}&codeChallengeMethod=S256`;
 
-      console.log(`[IFOOD_AUTH_REQUEST_BODY] [${environment}]:`, JSON.stringify(body));
+      console.log(`[IFOOD_AUTH_REQUEST_BODY] [${environment}]:`, bodyParams);
 
       const response = await fetch('https://merchant-api.ifood.com.br/authentication/v1.0/oauth/token', {
         method: 'POST',
         headers: {
           'Authorization': `Basic ${authHeader}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json'
         },
-        body: JSON.stringify(body)
+        body: new TextEncoder().encode(bodyParams)
       });
 
       if (!response.ok) {
