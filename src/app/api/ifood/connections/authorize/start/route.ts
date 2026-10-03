@@ -59,7 +59,7 @@ export async function POST(req: Request) {
       const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
       // 2. Create the body using iFood's specific camelCase keys
-      const bodyParams = `grantType=user_code&clientId=${encodeURIComponent(clientId)}&clientSecret=${encodeURIComponent(clientSecret)}&authorizationCodeVerifier=${encodeURIComponent(codeChallenge)}&codeChallengeMethod=S256`;
+      const bodyParams = `grantType=authorization_code&clientId=${encodeURIComponent(clientId)}&clientSecret=${encodeURIComponent(clientSecret)}&authorizationCodeVerifier=${encodeURIComponent(codeChallenge)}&codeChallengeMethod=S256`;
 
       console.log(`[IFOOD_AUTH_REQUEST_BODY] [${environment}]:`, bodyParams);
 
