@@ -26,5 +26,32 @@ model IfoodConfig {
   criadoEm              DateTime @default(now())
   atualizadoEm          DateTime @updatedAt
 
+  categories            IfoodCategory[]
+  products              IfoodProduct[]
+
   @@map("ifood_credentials")
+}
+
+model IfoodCategory {
+  id        String   @id
+  name      String
+  configId  String
+  config    IfoodConfig @relation(fields: [configId], references: [id])
+  products  IfoodProduct[]
+
+  @@map("ifood_categories")
+}
+
+model IfoodProduct {
+  id          String   @id
+  name        String
+  description String?
+  price       Float
+  categoryId  String
+  category    IfoodCategory @relation(fields: [categoryId], references: [id])
+  configId    String
+  config      IfoodConfig @relation(fields: [configId], references: [id])
+  updatedAt   DateTime @updatedAt
+
+  @@map("ifood_products")
 }
