@@ -73,12 +73,12 @@ export class IfoodCatalogService {
 
     const [categories, products] = await Promise.all([
       this.client.request<IfoodCategory[]>({
-        path: `/merchants/${input.merchantId}/categories`,
-        query: { include_items: 'true' },
+        path: `/merchant/v1.0/categories`,
+        query: { merchantId: input.merchantId },
         bearerToken: token,
       }),
       this.client.request<IfoodProduct[]>({
-        path: `/merchants/${input.merchantId}/items`,
+        path: `/merchant/v1.0/products`,
         query: { merchantId: input.merchantId },
         bearerToken: token,
       }),
