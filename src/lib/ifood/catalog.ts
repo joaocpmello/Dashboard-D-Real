@@ -72,14 +72,12 @@ export class IfoodCatalogService {
     const token = await this.auth.getAccessToken(input.organizationId, env);
 
     const categories = await this.client.request<IfoodCategory[]>({
-      path: `/merchant/v1.0/categories`,
-      query: { merchantId: input.merchantId },
+      path: `/catalog/v2.0/merchants/${input.merchantId}/categories`,
       bearerToken: token,
     });
 
     const products = await this.client.request<IfoodProduct[]>({
-      path: `/merchant/v1.0/products`,
-      query: { merchantId: input.merchantId },
+      path: `/catalog/v2.0/merchants/${input.merchantId}/products`,
       bearerToken: token,
     });
 
