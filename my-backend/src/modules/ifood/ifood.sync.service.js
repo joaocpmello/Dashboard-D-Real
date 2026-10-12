@@ -7,17 +7,26 @@ const prisma = new PrismaClient();
 class IfoodSyncService {
   async syncMenu(configId) {
     const token = await ifoodAuth.getAccessToken(configId);
+    const config = await prisma.ifoodConfig.findUnique({
+      where: { id: configId },
+    });
+
+    if (!config) {
+      throw new Error('iFood Configuration not found');
+    }
 
     try {
-      // iFood Catalog API: Fetch categories and products
-      // Note: Endpoint /catalog/v1.0/catalogs is the standard for full structure
-      const catalogData = await ifoodClient.request('GET', '/catalog/v1.0/catalogs', {
+      // Updated to iFood Catalog API v2.0
+      // Endpoint: GET /merchants/{merchantId}/categories?include_items=true
+      const endpoint = `/merchants/${config.merchantId}/categories`;
+      const categories = await ifoodClient.request('GET', endpoint, {
         token,
+        params: { include_items: 'true' },
       });
 
-      // Assuming catalogData contains categories with items
-      // Structure varies by API version, typically: { categories: [ { id, name, items: [...] } ] }
-      const categories = catalogData.categories || [];
+      if (!Array.isArray(categories)) {
+        throw new Error('Invalid response from iFood Catalog API');
+      }
 
       for (const cat of categories) {
         // 1. Upsert Category
