@@ -71,18 +71,17 @@ export class IfoodCatalogService {
     const env = resolveEnvironment(input.environment);
     const token = await this.auth.getAccessToken(input.organizationId, env);
 
-    const [categories, products] = await Promise.all([
-      this.client.request<IfoodCategory[]>({
-        path: `/merchant/v1.0/categories`,
-        query: { merchantId: input.merchantId },
-        bearerToken: token,
-      }),
-      this.client.request<IfoodProduct[]>({
-        path: `/merchant/v1.0/products`,
-        query: { merchantId: input.merchantId },
-        bearerToken: token,
-      }),
-    ]);
+    const categories = await this.client.request<IfoodCategory[]>({
+      path: `/merchant/v1.0/categories`,
+      query: { merchantId: input.merchantId },
+      bearerToken: token,
+    });
+
+    const products = await this.client.request<IfoodProduct[]>({
+      path: `/merchant/v1.0/products`,
+      query: { merchantId: input.merchantId },
+      bearerToken: token,
+    });
 
     return { categories, products };
   }
